@@ -1,0 +1,6 @@
+out/
+.idea/
+target/
+scorex.log
+scorex-errors.log
+
