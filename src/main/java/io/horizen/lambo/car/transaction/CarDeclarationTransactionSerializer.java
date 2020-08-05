@@ -6,7 +6,7 @@ import scorex.util.serialization.Writer;
 
 public final class CarDeclarationTransactionSerializer implements TransactionSerializer<CarDeclarationTransaction> {
 
-    private static CarDeclarationTransactionSerializer serializer = new CarDeclarationTransactionSerializer();
+    private static final CarDeclarationTransactionSerializer serializer = new CarDeclarationTransactionSerializer();
 
     private CarDeclarationTransactionSerializer() {
         super();

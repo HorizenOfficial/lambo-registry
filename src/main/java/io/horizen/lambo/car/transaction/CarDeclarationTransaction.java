@@ -29,7 +29,7 @@ import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.Ca
 // TODO: add specific mempool incompatibility checker to deprecate keeping in the Mempool txs that declare the same Car.
 public final class CarDeclarationTransaction extends AbstractRegularTransaction {
 
-    private CarBoxData outputCarBoxData;
+    private final CarBoxData outputCarBoxData;
 
     private List<NoncedBox<Proposition>> newBoxes;
 

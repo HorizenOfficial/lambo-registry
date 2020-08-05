@@ -17,9 +17,9 @@ import java.util.Objects;
 // No specific JSON view is set for SellOrderSpendingProof, the default one form AbstractSignature25519 is taken.
 public final class SellOrderSpendingProof extends AbstractSignature25519<PrivateKey25519, SellOrderProposition> {
     // To distinguish who opened the CarSellOrderBox: seller or buyer
-    private boolean isSeller;
+    private final boolean isSeller;
 
-    public static int SIGNATURE_LENGTH = Ed25519.signatureLength();
+    public static final int SIGNATURE_LENGTH = Ed25519.signatureLength();
 
     public SellOrderSpendingProof(byte[] signatureBytes, boolean isSeller) {
         super(signatureBytes);

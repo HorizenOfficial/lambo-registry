@@ -27,6 +27,7 @@ public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Propos
     // Additional check on VIN length can be done as well, but not present as a part of current example.
     public CarBoxData(PublicKey25519Proposition proposition, String vin,
                       int year, String model, String color) {
+        //AbstractNoncedBoxData requires value to be set in constructor. However, our car is unique object without any value in ZEN by default. So just set value to 1
         super(proposition, 1);
         this.vin = vin;
         this.year = year;
