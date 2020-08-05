@@ -113,7 +113,7 @@ public class CarRegistryAppModule
         // Add car registry specific API endpoints:
         // CarApi endpoints processing will be added to the API server.
         List<ApplicationApiGroup> customApiGroups = new ArrayList<>();
-        customApiGroups.add(new CarApi(transactionsCompanion, sidechainBoxesDataCompanion, sidechainProofsCompanion));
+        customApiGroups.add(new CarApi(transactionsCompanion));
 
 
         // No core API endpoints to be disabled:

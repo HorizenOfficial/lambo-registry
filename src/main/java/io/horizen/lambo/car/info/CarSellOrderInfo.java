@@ -18,10 +18,10 @@ import java.util.Arrays;
 // CarBuyOrderInfo contains the minimal set of data needed to construct SellCarTransaction specific inputs an outputs.
 public final class CarSellOrderInfo {
 
-    private CarBox carBoxToOpen;    // Car box to be spent in SellCarTransaction
-    private Signature25519 proof;   // Proof to unlock the box above
-    private long price;             // The Car price specified by the owner
-    private PublicKey25519Proposition buyerProposition; // The potential buyer of the car.
+    private final CarBox carBoxToOpen;    // Car box to be spent in SellCarTransaction
+    private final Signature25519 proof;   // Proof to unlock the box above
+    private final long price;             // The Car price specified by the owner
+    private final PublicKey25519Proposition buyerProposition; // The potential buyer of the car.
 
     public CarSellOrderInfo(CarBox carBoxToOpen, Signature25519 proof, long price, PublicKey25519Proposition buyerProposition) {
         this.carBoxToOpen = carBoxToOpen;
@@ -40,7 +40,7 @@ public final class CarSellOrderInfo {
     }
 
     // Recreates output CarSellOrderBoxData with the same Car attributes specified in CarBox
-    // and price/buyer specified in curent CarSellOrderInfo instance.
+    // and price/buyer specified in current CarSellOrderInfo instance.
     public CarSellOrderBoxData getSellOrderBoxData() {
         return new CarSellOrderBoxData(
                 new SellOrderProposition(carBoxToOpen.proposition().pubKeyBytes(), buyerProposition.pubKeyBytes()),

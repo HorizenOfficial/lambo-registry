@@ -36,7 +36,7 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     // Any malicious actions will lead to transaction invalidation.
     // For example, if SellOrder was accepted by the buyer specified, CarBuyOrderInfo view returns as the new box data
     // new instance of CarBoxData the owned by the buyer and RegularBoxData with the payment to previous owner.
-    private CarBuyOrderInfo carBuyOrderInfo;
+    private final CarBuyOrderInfo carBuyOrderInfo;
 
     private List<NoncedBox<Proposition>> newBoxes;
 

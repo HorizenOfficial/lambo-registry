@@ -18,12 +18,12 @@ import java.util.List;
 // It also support fee payment logic.
 public abstract class AbstractRegularTransaction extends SidechainTransaction<Proposition, NoncedBox<Proposition>> {
 
-    protected List<byte[]> inputRegularBoxIds;
-    protected List<Signature25519> inputRegularBoxProofs;
-    protected List<RegularBoxData> outputRegularBoxesData;
+    protected final List<byte[]> inputRegularBoxIds;
+    protected final List<Signature25519> inputRegularBoxProofs;
+    protected final List<RegularBoxData> outputRegularBoxesData;
 
-    protected long fee;
-    protected long timestamp;
+    protected final long fee;
+    protected final long timestamp;
 
     protected static ListSerializer<Signature25519> regularBoxProofsSerializer =
             new ListSerializer<>(Signature25519Serializer.getSerializer(), MAX_TRANSACTION_UNLOCKERS);
@@ -108,8 +108,9 @@ public abstract class AbstractRegularTransaction extends SidechainTransaction<Pr
             return false;
 
         // check that we have enough proofs.
-        if(inputRegularBoxIds.size() != inputRegularBoxProofs.size())
+        if(inputRegularBoxIds.size() != inputRegularBoxProofs.size()) {
             return false;
+        }
 
         return true;
     }
