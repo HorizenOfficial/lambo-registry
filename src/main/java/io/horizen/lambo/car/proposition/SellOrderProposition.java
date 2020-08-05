@@ -23,11 +23,11 @@ public final class SellOrderProposition implements ProofOfKnowledgeProposition<P
 
     // Specify json attribute name for the ownerPublicKeyBytes field.
     @JsonProperty("ownerPublicKey")
-    private byte[] ownerPublicKeyBytes;
+    private final byte[] ownerPublicKeyBytes;
 
     // Specify json attribute name for the buyerPublicKeyBytes field.
     @JsonProperty("buyerPublicKey")
-    private byte[] buyerPublicKeyBytes;
+    private final byte[] buyerPublicKeyBytes;
 
     public SellOrderProposition(byte[] ownerPublicKeyBytes, byte[] buyerPublicKeyBytes) {
         if(ownerPublicKeyBytes.length != KEY_LENGTH)

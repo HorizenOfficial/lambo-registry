@@ -34,7 +34,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     // So, no one outside controls what will be the specific outputs of this transaction.
     // Any malicious actions will lead to transaction invalidation.
     // For example, if CarBox was opened, the CarSellOrder obliged to contains the same car attributes and owner info.
-    private CarSellOrderInfo carSellOrderInfo;
+    private final CarSellOrderInfo carSellOrderInfo;
 
     private List<NoncedBox<Proposition>> newBoxes;
 

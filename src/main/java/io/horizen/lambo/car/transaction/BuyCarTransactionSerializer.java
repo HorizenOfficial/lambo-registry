@@ -6,7 +6,7 @@ import scorex.util.serialization.Writer;
 
 public final class BuyCarTransactionSerializer implements TransactionSerializer<BuyCarTransaction> {
 
-    private static BuyCarTransactionSerializer serializer = new BuyCarTransactionSerializer();
+    private static final BuyCarTransactionSerializer serializer = new BuyCarTransactionSerializer();
 
     private BuyCarTransactionSerializer() {
         super();
