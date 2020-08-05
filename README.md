@@ -14,8 +14,8 @@ Lambo Registry is an example of how to use and extend Sidechains SDK:
 The application introduce the following logic:
 * Declare a new Car token by specifying main car attributes: VIN, model, year and color.
 * Sell an owned car by creation of the sell order with a car price to be accepted by a specific buyer.
-* Cancel car selling operation, when the owner can revert sell order back.
-* Accept car sell order, when a specific buyer do a payment to the previous car owner and become a new owner.
+* Cancel car selling operation, when the owner reverts sell order back.
+* Accept car sell order, when a specific buyer does a payment to the previous car owner and become a new owner.
 
 Note: currently anyone can declare a new car without any proofs of real car existence and ownership.
 
@@ -42,7 +42,7 @@ To run Lambo node with `lambo_settings.conf`:
 2. Build and package Lambo jar `mvn package`.
 3. Execute application using the following command:
 
-For linux: 
+For Linux: 
 ```
 java -cp ./target/lambo-registry-0.1.0.jar:./target/lib/* io.horizen.lambo.CarRegistryApp ./src/main/resources/lambo_settings.conf
 ```
@@ -90,7 +90,7 @@ curl --location --request POST '127.0.0.1:9085/carApi/createCarSellOrder' \
     "fee": 100
 }'
 ```
-* To cancel sell car operation:
+* To cancel sell order by the owner:
 ```
 curl --location --request POST '127.0.0.1:9085/carApi/cancelCarSellOrder' \
 --header 'Content-Type: application/json' \
