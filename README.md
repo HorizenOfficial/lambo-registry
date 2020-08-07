@@ -1,27 +1,25 @@
 **Lambo Registry Application**
 
-Lambo Registry is a blockchain application based on [Sidechains SDK by Horizen](https://github.com/HorizenOfficial/Sidechains-SDK) Beta version.
-It supports all Sidechains SDK core features as well as introduce custom logic.
+"Lambo Registry" is a demo blockchain application based on the Beta version of the [Sidechains SDK by Horizen](https://github.com/HorizenOfficial/Sidechains-SDK). It supports all Sidechains SDK core features, and it also introduces some custom data and logic.
 
-Lambo Registry is an example of how to use and extend Sidechains SDK:
-* How to setup the project.
+Lambo Registry is an example of how the Sidechains SDK can be extended to support new functionalities. It shows in particular:
 * How to introduce custom Transactions, Boxes, Proofs and Propositions.
-* How to define custom API to do custom logic operation.
-* How to let SDK manage custom types and API endpoints.
+* How to define custom API.
+* How to manage custom types and API endpoints.
 
 **Lambo custom logic**
 
-The application introduce the following logic:
-* Declare a new Car token by specifying main car attributes: VIN, model, year and color.
-* Sell an owned car by creation of the sell order with a car price to be accepted by a specific buyer.
-* Cancel car selling operation, when the owner reverts sell order back.
-* Accept car sell order, when a specific buyer does a payment to the previous car owner and become a new owner.
+A user of the Lambo Registry application can:
+* Declare a new car token by specifying some car attributes: VIN (vehicle identification number), model, year and colour.
+* Sell an owned car by creating a the sell order associated to a price, that will have to be accepted by a specified buyer.
+* Cancel the car selling process, i.e. the car owner can revert the sell order.
+* Accept a car sell order, with a payment by the specified buyer to the previous car owner. This transaction makes the buyer the new owner of the car.
 
-Note: currently anyone can declare a new car without any proofs of real car existence and ownership.
+Note: this is just an example application, and it misses some fundamental elements to really map a real-world car registry application. In particular, this application allows anyone to declare a new car without proving its existence and ownership. 
 
 **Supported platforms**
 
-Lambo Registry Application is available and tested on Linux and Windows (64bit).
+The Lambo Registry application is available and tested on Linux and Windows (64bit).
 
 **Requirements**
 
@@ -30,17 +28,14 @@ Lambo Registry Application is available and tested on Linux and Windows (64bit).
 
 **Bootstrap and run**
 
-A detailed description of how to set up Lambo sidechain network and run a node with a connection to the mainchain 
-is identical to the one described in [Sidechains-SDK docs](https://github.com/HorizenOfficial/Sidechains-SDK/blob/master/examples/simpleapp/mc_sc_workflow_example.md).
+The process to set up a Lambo sidechain network and run its nodes with a connection to the mainchain is identical to the one described in [Sidechains-SDK simple app example](https://github.com/HorizenOfficial/Sidechains-SDK/blob/master/examples/simpleapp/mc_sc_workflow_example.md). There is no custom steps specific to Lambo application.
 
-There is no custom steps specific to Lambo application.
+For initial testing on regtest, you can use the predefined [lambo_settings.conf](src/main/resources/lambo_settings.conf) configuration file.
 
-For initial testing on the regtest the predefined [lambo_settings.conf](src/main/resources/lambo_settings.conf) configuration file can be used.
-
-To run Lambo node with `lambo_settings.conf`:
-1. Go to project root folder.
-2. Build and package Lambo jar `mvn package`.
-3. Execute application using the following command:
+Then to run a Lambo node, you can:
+1. Go to the project root folder.
+2. Build and package Lambo jar: `mvn package`.
+3. Execute the application with the following command:
 
 For Linux: 
 ```
@@ -54,18 +49,13 @@ java -cp ./target/lambo-registry-0.1.0.jar;./target/lib/* io.horizen.lambo.CarRe
 
 
 
-
-
 **Interaction**
 
-Each node has an API server bound to the `address:port` specified in a configuration file.
+Each node has an API server bound to the `address:port` specified in its configuration file. You can use any HTTP client that supports POST requests, e.g. Curl or Postman.
 
-Use any HTTP client that supports POST requests. For example, curl or Postman.
+To do all the operations described in the "Lambo custom logic" chapter of the SDK tutorial (link), you can use the following API endpoints (curl examples provided):
 
-
-To do all the operations described in "Lambo custom logic" chapter the following API endpoints used (curl examples provided):
-
-* To declare new car:
+* To declare a new car:
 ```
 curl --location --request POST '127.0.0.1:9085/carApi/createCar' \
 --header 'Content-Type: application/json' \
@@ -90,7 +80,7 @@ curl --location --request POST '127.0.0.1:9085/carApi/createCarSellOrder' \
     "fee": 100
 }'
 ```
-* To cancel sell order by the owner:
+* To cancel a sell order (by the owner):
 ```
 curl --location --request POST '127.0.0.1:9085/carApi/cancelCarSellOrder' \
 --header 'Content-Type: application/json' \
