@@ -2,6 +2,8 @@ package io.horizen.lambo.car.api;
 
 import akka.http.javadsl.server.Route;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.horizen.api.http.ApiResponse;
 import com.horizen.api.http.ApplicationApiGroup;
 import com.horizen.api.http.ErrorResponse;
@@ -30,6 +32,7 @@ import io.horizen.lambo.car.box.data.CarBoxData;
 import io.horizen.lambo.car.info.CarBuyOrderInfo;
 import io.horizen.lambo.car.info.CarSellOrderInfo;
 import io.horizen.lambo.car.proof.SellOrderSpendingProof;
+import io.horizen.lambo.car.services.CarInfoDBService;
 import io.horizen.lambo.car.transaction.BuyCarTransaction;
 import io.horizen.lambo.car.transaction.CarDeclarationTransaction;
 import io.horizen.lambo.car.transaction.SellCarTransaction;
@@ -54,9 +57,12 @@ import java.util.*;
 public class CarApi extends ApplicationApiGroup {
 
     private final SidechainTransactionsCompanion sidechainTransactionsCompanion;
+    private CarInfoDBService carInfoDBService;
 
-    public CarApi(SidechainTransactionsCompanion sidechainTransactionsCompanion) {
+    @Inject
+    public CarApi(@Named("SidechainTransactionsCompanion") SidechainTransactionsCompanion sidechainTransactionsCompanion, CarInfoDBService carInfoDBService) {
         this.sidechainTransactionsCompanion = sidechainTransactionsCompanion;
+        this.carInfoDBService = carInfoDBService;
     }
 
     // Define the base path for API url, i.e. according current config we could access that Api Group by using address 127.0.0.1:9085/carApi
@@ -91,6 +97,11 @@ public class CarApi extends ApplicationApiGroup {
             // Parse the proposition of the Car owner.
             PublicKey25519Proposition carOwnershipProposition = PublicKey25519PropositionSerializer.getSerializer()
                     .parseBytes(BytesUtils.fromHexString(ent.proposition));
+
+            //check that the vin is unique (both in local veichle store and in mempool)
+            if (! carInfoDBService.validateVin(ent.vin, view.getNodeMemoryPool())){
+                throw new IllegalStateException("Vehicle identification number already present in blockchain");
+            }
 
             CarBoxData carBoxData = new CarBoxData(carOwnershipProposition, ent.vin, ent.year, ent.model, ent.color);
 

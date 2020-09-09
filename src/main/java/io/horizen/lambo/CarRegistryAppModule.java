@@ -1,7 +1,9 @@
 package io.horizen.lambo;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.horizen.SidechainSettings;
 import com.horizen.api.http.ApplicationApiGroup;
@@ -93,12 +95,6 @@ public class CarRegistryAppModule
         SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(
                 customTransactionSerializers, sidechainBoxesDataCompanion, sidechainProofsCompanion);
 
-
-        // Define Application state and wallet logic:
-        ApplicationWallet defaultApplicationWallet = new CarRegistryApplicationWallet();
-        ApplicationState defaultApplicationState = new CarRegistryApplicationState();
-
-
         // Define the path to storages:
         String dataDirPath = sidechainSettings.scorexSettings().dataDir().getAbsolutePath();
         File secretStore = new File( dataDirPath + "/secret");
@@ -108,17 +104,10 @@ public class CarRegistryAppModule
         File stateStore = new File(dataDirPath + "/state");
         File historyStore = new File(dataDirPath + "/history");
         File consensusStore = new File(dataDirPath + "/consensusData");
-
-
-        // Add car registry specific API endpoints:
-        // CarApi endpoints processing will be added to the API server.
-        List<ApplicationApiGroup> customApiGroups = new ArrayList<>();
-        customApiGroups.add(new CarApi(transactionsCompanion));
-
+        File carInfoStore = new File(dataDirPath + "/cars");
 
         // No core API endpoints to be disabled:
         List<Pair<String, String>> rejectedApiPaths = new ArrayList<>();
-
 
         // Inject custom objects:
         // Names are equal to the ones specified in SidechainApp class constructor.
@@ -142,13 +131,13 @@ public class CarRegistryAppModule
                 .annotatedWith(Names.named("CustomTransactionSerializers"))
                 .toInstance(customTransactionSerializers);
 
+        // Define Application state and wallet logic:
         bind(ApplicationWallet.class)
                 .annotatedWith(Names.named("ApplicationWallet"))
-                .toInstance(defaultApplicationWallet);
-
+                .to(CarRegistryApplicationWallet.class);
         bind(ApplicationState.class)
                 .annotatedWith(Names.named("ApplicationState"))
-                .toInstance(defaultApplicationState);
+                .to(CarRegistryApplicationState.class);
 
         bind(Storage.class)
                 .annotatedWith(Names.named("SecretStorage"))
@@ -171,13 +160,26 @@ public class CarRegistryAppModule
         bind(Storage.class)
                 .annotatedWith(Names.named("ConsensusStorage"))
                 .toInstance(IODBStorageUtil.getStorage(consensusStore));
-
-        bind(new TypeLiteral<List<ApplicationApiGroup>> () {})
-                .annotatedWith(Names.named("CustomApiGroups"))
-                .toInstance(customApiGroups);
+        bind(Storage.class)
+                .annotatedWith(Names.named("CarInfoStorage"))
+                .toInstance(IODBStorageUtil.getStorage(carInfoStore));
 
         bind(new TypeLiteral<List<Pair<String, String>>> () {})
                 .annotatedWith(Names.named("RejectedApiPaths"))
                 .toInstance(rejectedApiPaths);
+
+        bind(SidechainTransactionsCompanion.class)
+                .annotatedWith(Names.named("SidechainTransactionsCompanion"))
+                .toInstance(transactionsCompanion);
     }
+
+    // Add car registry specific API endpoints:
+    // CarApi endpoints processing will be added to the API server.
+    @Provides @Named("CustomApiGroups")
+    List<ApplicationApiGroup> getCustomApiGroups(CarApi carApi) {
+        List<ApplicationApiGroup> customApiGroups = new ArrayList<>();
+        customApiGroups.add(carApi);
+        return customApiGroups;
+    }
+
 }
