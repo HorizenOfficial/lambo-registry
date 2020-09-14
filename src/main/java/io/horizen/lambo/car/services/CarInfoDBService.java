@@ -13,12 +13,8 @@ import io.horizen.lambo.car.box.CarBox;
 import io.horizen.lambo.car.box.CarSellOrderBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
+import scorex.crypto.hash.Blake2b256;
+import java.util.*;
 
 /**
  * This service manages a local db with the list of all veichle identification numbers (vin) declared on the chain.
@@ -57,13 +53,13 @@ public class CarInfoDBService {
      * @param memoryPool if not null, the vin is checked also against the mempool transactions
      * @return true if the vin is valid (not already declared)
      */
-    public boolean validateVin(String vin, NodeMemoryPool memoryPool){
+    public boolean validateVin(String vin,  Optional<NodeMemoryPool> memoryPool){
         if (carInfoStorage.get(buildDBElement(vin).getKey()).isPresent()){
             return false;
         }
         //in the vin is not found, and the mempool was provided, we check also there
-        if (memoryPool != null) {
-            for (BoxTransaction<Proposition, Box<Proposition>> transaction : memoryPool.getTransactions()) {
+        if (memoryPool.isPresent()) {
+            for (BoxTransaction<Proposition, Box<Proposition>> transaction : memoryPool.get().getTransactions()) {
                 Set<String> vinInMempool = extractVinFromBoxes(transaction.newBoxes());
                 if (vinInMempool.contains(vin)){
                     return false;
@@ -99,10 +95,9 @@ public class CarInfoDBService {
 
 
     private Pair<ByteArrayWrapper, ByteArrayWrapper> buildDBElement(String vin){
-        //we use a fixed key size of 32, which is the default of iohk.iodb used as underline storage
-        ByteBuffer keyBuffer = ByteBuffer.allocate(32).put(vin.getBytes());
-        ByteArrayWrapper keyWrapper = new ByteArrayWrapper(keyBuffer.array());
-        //the value is not important (we need just a key set, each key is a vin)
+        //we hash the vin to be sure the key has a  fixed size of 32, which is the default of iohk.iodb used as underline storage
+        ByteArrayWrapper keyWrapper = new ByteArrayWrapper(Blake2b256.hash(vin));
+        //the value is not important (we need just a key set, each key is a vin hash)
         ByteArrayWrapper valueWrapper = new ByteArrayWrapper(new byte[1]);
         return new Pair<>(keyWrapper, valueWrapper);
     }

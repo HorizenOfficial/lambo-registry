@@ -15,8 +15,9 @@ import scala.util.Success;
 import scala.util.Try;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-
+import scala.collection.JavaConverters;
 
 public class CarRegistryApplicationState implements ApplicationState {
 	
@@ -29,16 +30,29 @@ public class CarRegistryApplicationState implements ApplicationState {
 	
     @Override
     public boolean validate(SidechainStateReader stateReader, SidechainBlock block) {
-	    return true;
-    }
+        //We check that there are no multiple transactions declaring the same VIN inside the block
+        Set<String> vinList = new HashSet<>();
+        for (BoxTransaction<Proposition, Box<Proposition>> t :  JavaConverters.seqAsJavaList(block.transactions())){
+            if (t instanceof CarDeclarationTransaction){
+                for (String currentVin :  carInfoDbService.extractVinFromBoxes(t.newBoxes())){
+                    if (vinList.contains(currentVin)){
+                        return false;
+                    }else{
+                        vinList.add(currentVin);
+                    }
+                }
+            }
+        }
+        return true;
+	}
 
     @Override
     public boolean validate(SidechainStateReader stateReader, BoxTransaction<Proposition, Box<Proposition>> transaction) {
         // we go though all CarDeclarationTransactions and verify that each CarBox reflects to unique Car.
-        if (CarDeclarationTransaction.class.isAssignableFrom(transaction.getClass())){
+        if (transaction instanceof CarDeclarationTransaction){
             Set<String> vinList = carInfoDbService.extractVinFromBoxes(transaction.newBoxes());
             for (String vin : vinList) {
-                if (! carInfoDbService.validateVin(vin, null)){
+                if (! carInfoDbService.validateVin(vin, Optional.empty())){
                     return false;
                 }
             }

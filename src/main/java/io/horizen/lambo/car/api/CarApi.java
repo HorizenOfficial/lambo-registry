@@ -99,7 +99,7 @@ public class CarApi extends ApplicationApiGroup {
                     .parseBytes(BytesUtils.fromHexString(ent.proposition));
 
             //check that the vin is unique (both in local veichle store and in mempool)
-            if (! carInfoDBService.validateVin(ent.vin, view.getNodeMemoryPool())){
+            if (! carInfoDBService.validateVin(ent.vin, Optional.of(view.getNodeMemoryPool()))){
                 throw new IllegalStateException("Vehicle identification number already present in blockchain");
             }
 
