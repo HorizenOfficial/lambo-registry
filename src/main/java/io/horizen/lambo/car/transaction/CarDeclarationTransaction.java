@@ -27,7 +27,7 @@ import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.Ca
 // As outputs it contains possible RegularBoxes(to pay fee and change) and new CarBox entry.
 // No specific unlockers to parent class logic, but has specific new box.
 // TODO: add specific mempool incompatibility checker to deprecate keeping in the Mempool txs that declare the same Car.
-public final class CarDeclarationTransaction<P extends Proposition, B extends NoncedBox<P>> extends AbstractRegularTransaction {
+public final class CarDeclarationTransaction extends AbstractRegularTransaction {
 
     private final CarBoxData outputCarBoxData;
     private List<NoncedBox<Proposition>> newBoxes;

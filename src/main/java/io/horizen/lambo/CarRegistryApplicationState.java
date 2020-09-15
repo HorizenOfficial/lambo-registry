@@ -33,7 +33,7 @@ public class CarRegistryApplicationState implements ApplicationState {
         //We check that there are no multiple transactions declaring the same VIN inside the block
         Set<String> vinList = new HashSet<>();
         for (BoxTransaction<Proposition, Box<Proposition>> t :  JavaConverters.seqAsJavaList(block.transactions())){
-            if (t instanceof CarDeclarationTransaction){
+            if (CarDeclarationTransaction.class.isInstance(t)){
                 for (String currentVin :  carInfoDbService.extractVinFromBoxes(t.newBoxes())){
                     if (vinList.contains(currentVin)){
                         return false;
@@ -49,7 +49,7 @@ public class CarRegistryApplicationState implements ApplicationState {
     @Override
     public boolean validate(SidechainStateReader stateReader, BoxTransaction<Proposition, Box<Proposition>> transaction) {
         // we go though all CarDeclarationTransactions and verify that each CarBox reflects to unique Car.
-        if (transaction instanceof CarDeclarationTransaction){
+        if (CarDeclarationTransaction.class.isInstance(transaction)){
             Set<String> vinList = carInfoDbService.extractVinFromBoxes(transaction.newBoxes());
             for (String vin : vinList) {
                 if (! carInfoDbService.validateVin(vin, Optional.empty())){
