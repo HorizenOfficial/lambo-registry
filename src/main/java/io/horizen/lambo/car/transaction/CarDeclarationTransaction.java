@@ -30,7 +30,6 @@ import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.Ca
 public final class CarDeclarationTransaction extends AbstractRegularTransaction {
 
     private final CarBoxData outputCarBoxData;
-
     private List<NoncedBox<Proposition>> newBoxes;
 
     public CarDeclarationTransaction(List<byte[]> inputRegularBoxIds,
