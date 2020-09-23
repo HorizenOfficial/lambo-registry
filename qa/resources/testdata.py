@@ -5,6 +5,7 @@ class BOXTYPE_STANDARD():
 
 class BOXTYPE_CUSTOM():
     CAR = 1
+    SELL_ORDER = 2
 
 class CAR():
     VIN = "NDWERR23423RAS"

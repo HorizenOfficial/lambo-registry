@@ -85,7 +85,7 @@ class LamboTest1(BasicTest):
 
         #check that the sell order was created correctly
         (searchBoxFound, sellOrderBoxId) = searchBoxListByAttributes(foundTx['newBoxes'],
-                    'typeId', 2,
+                    'typeId', BOXTYPE_CUSTOM.SELL_ORDER,
                     'vin', CAR.VIN,
                     )
         assert_true(searchBoxFound)
