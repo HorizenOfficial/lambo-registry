@@ -3,7 +3,7 @@
 **Requirements**
 
 - Install Python 2.7
-- Donwload Sidechain SDK
+- Download Sidechain SDK
 
 **Additional settings**
 

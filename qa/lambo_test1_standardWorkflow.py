@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.getenv("SIDECHAIN_SDK", "") + '/qa/')
-from test_framework.util import assert_equal, assert_true, assert_false, fail
+from test_framework.util import assert_equal, assert_true, assert_false, fail, forward_transfer_to_sidechain
 from httpCalls.transaction.sendCoinsToAddress import sendCoinsToAddress
 from httpCalls.carApi.createCar import createCar
 from httpCalls.carApi.createCarSellOrder import createCarSellOrder
@@ -36,26 +36,27 @@ class LamboTest1(BasicTest):
 
     def run_test(self):
         print "Starting test"
+        mc_node = self.nodes[0]
         sc_node1 = self.sc_nodes[0]
         sc_node2 = self.sc_nodes[1]
+        publicKeySeller = self.sc_nodes_bootstrap_info.genesis_account.publicKey
         self.sc_sync_all()
 
-        #convert initial forging amount to standard coinbox and returns the public key owning it and the amount
-        (publicKey, convertedForgingStakeValue) = self.convertInitialForging()
+        #we need regular coins (the genesis account balance is locked into forging stake), so we perform a
+        #forward transfer to sidechain for an amount equals to the genesis_account_balance
+        forward_transfer_to_sidechain(self.sc_nodes_bootstrap_info.sidechain_id,
+                                      mc_node,
+                                      publicKeySeller,
+                                      self.sc_nodes_bootstrap_info.genesis_account_balance)
         self.sc_sync_all()
         self.generateOneBlock(sc_node1)
         self.sc_sync_all()
 
-        #check that the stadard coinbox is present in wallet
-        boxes = http_wallet_allBoxes(sc_node1)
-        (searchBoxFound, boxId)  = searchBoxListByAttributes(boxes,
-                                               'typeId', BOXTYPE_STANDARD.REGULAR,
-                                               'value', convertedForgingStakeValue,
-                                               )
-        assert_true(searchBoxFound)
+        #check that the wallet balance is doubled now (forging stake + the forward transfer) (we need to convert to zentoshi also)
+        assert_equal(http_wallet_balance(sc_node1),  (self.sc_nodes_bootstrap_info.genesis_account_balance * 2) * 100000000)
 
         #declare a new car
-        (success, transactionid) = createCar(sc_node1, CAR.VIN, CAR.YEAR, CAR.MODEL, CAR.COLOR, publicKey, 1000)
+        (success, transactionid) = createCar(sc_node1, CAR.VIN, CAR.YEAR, CAR.MODEL, CAR.COLOR, publicKeySeller, 1000)
         assert_true(success)
         self.sc_sync_all()
         self.generateOneBlock(sc_node1)
@@ -123,8 +124,6 @@ class LamboTest1(BasicTest):
 
         #user on sidechain node 2 has correct balance (initial - car price  - feee + car value (actually 1 hardcoded in code))
         assert_equal(http_wallet_balance(sc_node2), 39999001)
-
-
 
 
 if __name__ == "__main__":
