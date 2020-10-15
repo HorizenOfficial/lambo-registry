@@ -4,20 +4,20 @@ import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.horizen.box.NoncedBox;
+import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.RegularBoxData;
-import io.horizen.lambo.car.box.CarBox;
 import io.horizen.lambo.car.box.data.CarBoxData;
 import io.horizen.lambo.car.box.data.CarBoxDataSerializer;
 import com.horizen.proof.Signature25519;
 import com.horizen.proposition.Proposition;
 import com.horizen.transaction.TransactionSerializer;
+import com.horizen.transaction.AbstractRegularTransaction;
 import com.horizen.utils.BytesUtils;
 import scorex.core.NodeViewModifier$;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.CarDeclarationTransactionId;
@@ -31,8 +31,6 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
 
     private final CarBoxData outputCarBoxData;
 
-    private List<NoncedBox<Proposition>> newBoxes;
-
     public CarDeclarationTransaction(List<byte[]> inputRegularBoxIds,
                                      List<Signature25519> inputRegularBoxProofs,
                                      List<RegularBoxData> outputRegularBoxesData,
@@ -40,6 +38,11 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
                                      long fee,
                                      long timestamp) {
         super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
+
+        // Parameters sanity check
+        if(outputCarBoxData == null){
+            throw new IllegalArgumentException("Unacceptable value of outputCarBoxData!");
+        }
         this.outputCarBoxData = outputCarBoxData;
     }
 
@@ -49,16 +52,14 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         return CarDeclarationTransactionId.id();
     }
 
-    // Override newBoxes to contains regularBoxes from the parent class appended with CarBox entry.
-    // The nonce calculation algorithm for CarBox is the same as in parent class.
     @Override
-    public synchronized List<NoncedBox<Proposition>> newBoxes() {
-        if(newBoxes == null) {
-            newBoxes = new ArrayList<>(super.newBoxes());
-            long nonce = getNewBoxNonce(outputCarBoxData.proposition(), newBoxes.size());
-            newBoxes.add((NoncedBox) new CarBox(outputCarBoxData, nonce));
+    public List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getOutputData(){
+        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = new ArrayList<>();
+        for(RegularBoxData regularBoxData: outputRegularBoxesData){
+            allBoxesData.add((NoncedBoxData) regularBoxData);
         }
-        return Collections.unmodifiableList(newBoxes);
+        allBoxesData.add((NoncedBoxData) outputCarBoxData);
+        return allBoxesData;
     }
 
     // Define object serialization, that should serialize both parent class entries and CarBoxData as well
