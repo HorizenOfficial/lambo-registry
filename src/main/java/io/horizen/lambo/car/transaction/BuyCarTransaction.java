@@ -58,14 +58,11 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
         return BuyCarTransactionId.id();
     }
 
+    // Gets CarBuyOrderInfo-related boxes data
     @Override
-    public List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getOutputData(){
-        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = new ArrayList<>();
-        for(RegularBoxData regularBoxData: outputRegularBoxesData){
-            allBoxesData.add((NoncedBoxData) regularBoxData);
-        }
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData(){
         // Set CarBox with specific owner depends on proof. See CarBuyOrderInfo.getNewOwnerCarBoxData() definition.
-        allBoxesData.add((NoncedBoxData) carBuyOrderInfo.getNewOwnerCarBoxData());
+        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = Arrays.asList((NoncedBoxData) carBuyOrderInfo.getNewOwnerCarBoxData());
         // If Sell Order was opened by the buyer -> add payment box for Car previous owner.
         if (!carBuyOrderInfo.isSpentByOwner()){
             allBoxesData.add((NoncedBoxData) carBuyOrderInfo.getPaymentBoxData());

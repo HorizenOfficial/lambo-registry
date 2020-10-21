@@ -53,13 +53,8 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     }
 
     @Override
-    public List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getOutputData(){
-        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = new ArrayList<>();
-        for(RegularBoxData regularBoxData: outputRegularBoxesData){
-            allBoxesData.add((NoncedBoxData) regularBoxData);
-        }
-        allBoxesData.add((NoncedBoxData) outputCarBoxData);
-        return allBoxesData;
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData(){
+        return Arrays.asList((NoncedBoxData) outputCarBoxData);
     }
 
     // Define object serialization, that should serialize both parent class entries and CarBoxData as well

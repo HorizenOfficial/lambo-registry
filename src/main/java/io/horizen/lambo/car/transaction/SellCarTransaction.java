@@ -57,14 +57,10 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         return SellCarTransactionId.id();
     }
 
+    // Gets CarSellOrderInfo-related boxes data
     @Override
-    public List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getOutputData(){
-        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = new ArrayList<>();
-        for(RegularBoxData regularBoxData: outputRegularBoxesData){
-            allBoxesData.add((NoncedBoxData) regularBoxData);
-        }
-        allBoxesData.add((NoncedBoxData) carSellOrderInfo.getSellOrderBoxData());
-        return allBoxesData;
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData(){
+        return Arrays.asList((NoncedBoxData) carSellOrderInfo.getSellOrderBoxData());
     }
 
     // Override unlockers to contains regularBoxes from the parent class appended with CarBox entry to be opened.
