@@ -4,3 +4,4 @@ target/
 scorex.log
 scorex-errors.log
 
+/lambo-registry.iml
