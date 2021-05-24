@@ -5,21 +5,20 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.horizen.box.BoxUnlocker;
 import com.horizen.box.NoncedBox;
-import com.horizen.box.RegularBox;
+import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.RegularBoxData;
-import io.horizen.lambo.car.box.CarBox;
 import io.horizen.lambo.car.info.CarBuyOrderInfo;
 import com.horizen.proof.Proof;
 import com.horizen.proof.Signature25519;
 import com.horizen.proposition.Proposition;
 import com.horizen.transaction.TransactionSerializer;
+import com.horizen.transaction.AbstractRegularTransaction;
 import com.horizen.utils.BytesUtils;
 import scorex.core.NodeViewModifier$;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.BuyCarTransactionId;
@@ -38,8 +37,6 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     // new instance of CarBoxData the owned by the buyer and RegularBoxData with the payment to previous owner.
     private final CarBuyOrderInfo carBuyOrderInfo;
 
-    private List<NoncedBox<Proposition>> newBoxes;
-
     public BuyCarTransaction(List<byte[]> inputRegularBoxIds,
                              List<Signature25519> inputRegularBoxProofs,
                              List<RegularBoxData> outputRegularBoxesData,
@@ -47,6 +44,11 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
                              long fee,
                              long timestamp) {
         super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
+
+        // Parameters sanity check
+        if(carBuyOrderInfo == null){
+            throw new IllegalArgumentException("Unacceptable value of carBuyOrderInfo!");
+        }
         this.carBuyOrderInfo = carBuyOrderInfo;
     }
 
@@ -54,6 +56,18 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     @Override
     public byte transactionTypeId() {
         return BuyCarTransactionId.id();
+    }
+
+    // Gets CarBuyOrderInfo-related boxes data
+    @Override
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData(){
+        // Set CarBox with specific owner depends on proof. See CarBuyOrderInfo.getNewOwnerCarBoxData() definition.
+        List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> allBoxesData = Arrays.asList((NoncedBoxData) carBuyOrderInfo.getNewOwnerCarBoxData());
+        // If Sell Order was opened by the buyer -> add payment box for Car previous owner.
+        if (!carBuyOrderInfo.isSpentByOwner()){
+            allBoxesData.add((NoncedBoxData) carBuyOrderInfo.getPaymentBoxData());
+        }
+        return allBoxesData;
     }
 
     // Override unlockers to contains regularBoxes from the parent class appended with CarSellOrderBox entry.
@@ -77,29 +91,6 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
         unlockers.add(unlocker);
 
         return unlockers;
-    }
-
-    // Override newBoxes to contains regularBoxes from the parent class appended with CarBox and payment entries.
-    // The nonce calculation algorithm for Boxes is the same as in parent class.
-    @Override
-    public List<NoncedBox<Proposition>> newBoxes() {
-        if(newBoxes == null) {
-            // Get new boxes from base class.
-            newBoxes = new ArrayList<>(super.newBoxes());
-
-            // Set CarBox with specific owner depends on proof. See CarBuyOrderInfo.getNewOwnerCarBoxData() definition.
-            long nonce = getNewBoxNonce(carBuyOrderInfo.getNewOwnerCarBoxData().proposition(), newBoxes.size());
-            newBoxes.add((NoncedBox) new CarBox(carBuyOrderInfo.getNewOwnerCarBoxData(), nonce));
-
-            // If Sell Order was opened by the buyer -> add payment box for Car previous owner.
-            if (!carBuyOrderInfo.isSpentByOwner()) {
-                RegularBoxData paymentBoxData = carBuyOrderInfo.getPaymentBoxData();
-                nonce = getNewBoxNonce(paymentBoxData.proposition(), newBoxes.size());
-                newBoxes.add((NoncedBox) new RegularBox(paymentBoxData, nonce));
-            }
-        }
-        return Collections.unmodifiableList(newBoxes);
-
     }
 
     // Define object serialization, that should serialize both parent class entries and CarBuyOrderInfo as well

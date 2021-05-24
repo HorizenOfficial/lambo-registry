@@ -5,20 +5,20 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.horizen.box.BoxUnlocker;
 import com.horizen.box.NoncedBox;
+import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.RegularBoxData;
-import io.horizen.lambo.car.box.CarSellOrderBox;
 import io.horizen.lambo.car.info.CarSellOrderInfo;
 import com.horizen.proof.Proof;
 import com.horizen.proof.Signature25519;
 import com.horizen.proposition.Proposition;
 import com.horizen.transaction.TransactionSerializer;
+import com.horizen.transaction.AbstractRegularTransaction;
 import com.horizen.utils.BytesUtils;
 import scorex.core.NodeViewModifier$;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.SellCarTransactionId;
@@ -36,8 +36,6 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     // For example, if CarBox was opened, the CarSellOrder obliged to contains the same car attributes and owner info.
     private final CarSellOrderInfo carSellOrderInfo;
 
-    private List<NoncedBox<Proposition>> newBoxes;
-
     public SellCarTransaction(List<byte[]> inputRegularBoxIds,
                               List<Signature25519> inputRegularBoxProofs,
                               List<RegularBoxData> outputRegularBoxesData,
@@ -45,6 +43,11 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
                               long fee,
                               long timestamp) {
         super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
+
+        // Parameters sanity check
+        if(carSellOrderInfo == null){
+            throw new IllegalArgumentException("Unacceptable value of carSellOrderInfo!");
+        }
         this.carSellOrderInfo = carSellOrderInfo;
     }
 
@@ -52,6 +55,12 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     @Override
     public byte transactionTypeId() {
         return SellCarTransactionId.id();
+    }
+
+    // Gets CarSellOrderInfo-related boxes data
+    @Override
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData(){
+        return Arrays.asList((NoncedBoxData) carSellOrderInfo.getSellOrderBoxData());
     }
 
     // Override unlockers to contains regularBoxes from the parent class appended with CarBox entry to be opened.
@@ -75,21 +84,6 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         unlockers.add(unlocker);
 
         return unlockers;
-    }
-
-    // Override newBoxes to contains regularBoxes from the parent class appended with CarSellOrderBox and payment entries.
-    // The nonce calculation algorithm for CarSellOrderBox is the same as in parent class.
-    @Override
-    public List<NoncedBox<Proposition>> newBoxes() {
-        if(newBoxes == null) {
-            newBoxes = new ArrayList<>(super.newBoxes());
-            long nonce = getNewBoxNonce(carSellOrderInfo.getSellOrderBoxData().proposition(), newBoxes.size());
-            // Here we enforce output CarSellOrder data calculation.
-            // Any malicious action will lead to different inconsistent data to the honest nodes State.
-            newBoxes.add((NoncedBox) new CarSellOrderBox(carSellOrderInfo.getSellOrderBoxData(), nonce));
-
-        }
-        return Collections.unmodifiableList(newBoxes);
     }
 
     // Define object serialization, that should serialize both parent class entries and CarSellOrderInfo as well
