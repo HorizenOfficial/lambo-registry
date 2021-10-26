@@ -10,8 +10,6 @@ import com.horizen.box.BoxSerializer;
 import com.horizen.box.NoncedBox;
 import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.NoncedBoxDataSerializer;
-import com.horizen.companion.SidechainBoxesDataCompanion;
-import com.horizen.companion.SidechainProofsCompanion;
 import com.horizen.companion.SidechainTransactionsCompanion;
 import io.horizen.lambo.car.api.CarApi;
 import io.horizen.lambo.car.box.CarBoxSerializer;
@@ -88,10 +86,7 @@ public class CarRegistryAppModule
         customTransactionSerializers.put(CarRegistryTransactionsIdsEnum.BuyCarTransactionId.id(), (TransactionSerializer) BuyCarTransactionSerializer.getSerializer());
 
         // Create companions that will allow to serialize and deserialize any kind of core and custom types specified.
-        SidechainBoxesDataCompanion sidechainBoxesDataCompanion = new SidechainBoxesDataCompanion(customBoxDataSerializers);
-        SidechainProofsCompanion sidechainProofsCompanion = new SidechainProofsCompanion(customProofSerializers);
-        SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(
-                customTransactionSerializers, sidechainBoxesDataCompanion, sidechainProofsCompanion);
+        SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(customTransactionSerializers);
 
 
         // Define Application state and wallet logic:

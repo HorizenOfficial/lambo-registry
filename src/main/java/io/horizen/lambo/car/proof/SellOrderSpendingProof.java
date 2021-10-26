@@ -70,11 +70,6 @@ public final class SellOrderSpendingProof extends AbstractSignature25519<Private
     }
 
     @Override
-    public byte proofTypeId() {
-        return CarRegistryProofsIdsEnum.SellOrderSpendingProofId.id();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

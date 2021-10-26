@@ -5,7 +5,9 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.horizen.box.BoxUnlocker;
 import com.horizen.box.NoncedBox;
-import com.horizen.box.data.RegularBoxData;
+import com.horizen.box.data.NoncedBoxData;
+import com.horizen.box.data.ZenBoxData;
+import com.horizen.transaction.AbstractRegularTransaction;
 import io.horizen.lambo.car.box.CarSellOrderBox;
 import io.horizen.lambo.car.info.CarSellOrderInfo;
 import com.horizen.proof.Proof;
@@ -25,8 +27,8 @@ import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.Se
 
 // SellCarTransaction is nested from AbstractRegularTransaction so support regular coins transmission as well.
 // SellCarTransaction was designed to create a SellOrder for a specific buyer for given CarBox owned by the user.
-// As outputs it contains possible RegularBoxes(to pay fee and make change) and new CarSellOrder entry.
-// As unlockers it contains RegularBoxes and CarBox to open.
+// As outputs it contains possible ZenBoxes(to pay fee and make change) and new CarSellOrder entry.
+// As unlockers it contains ZenBoxes and CarBox to open.
 public final class SellCarTransaction extends AbstractRegularTransaction {
 
     // CarSellOrderInfo is a view that describes what car box to open and what is the sell order(car attributes, price and buyer info).
@@ -36,15 +38,12 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     // For example, if CarBox was opened, the CarSellOrder obliged to contains the same car attributes and owner info.
     private final CarSellOrderInfo carSellOrderInfo;
 
-    private List<NoncedBox<Proposition>> newBoxes;
-
-    public SellCarTransaction(List<byte[]> inputRegularBoxIds,
-                              List<Signature25519> inputRegularBoxProofs,
-                              List<RegularBoxData> outputRegularBoxesData,
+    public SellCarTransaction(List<byte[]> inputZenBoxIds,
+                              List<Signature25519> inputZenBoxProofs,
+                              List<ZenBoxData> outputZenBoxesData,
                               CarSellOrderInfo carSellOrderInfo,
-                              long fee,
-                              long timestamp) {
-        super(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, fee, timestamp);
+                              long fee) {
+        super(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, fee);
         this.carSellOrderInfo = carSellOrderInfo;
     }
 
@@ -54,7 +53,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         return SellCarTransactionId.id();
     }
 
-    // Override unlockers to contains regularBoxes from the parent class appended with CarBox entry to be opened.
+    // Override unlockers to contains ZenBoxes from the parent class appended with CarBox entry to be opened.
     @Override
     public List<BoxUnlocker<Proposition>> unlockers() {
         // Get Regular unlockers from base class.
@@ -77,45 +76,34 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         return unlockers;
     }
 
-    // Override newBoxes to contains regularBoxes from the parent class appended with CarSellOrderBox and payment entries.
-    // The nonce calculation algorithm for CarSellOrderBox is the same as in parent class.
     @Override
-    public List<NoncedBox<Proposition>> newBoxes() {
-        if(newBoxes == null) {
-            newBoxes = new ArrayList<>(super.newBoxes());
-            long nonce = getNewBoxNonce(carSellOrderInfo.getSellOrderBoxData().proposition(), newBoxes.size());
-            // Here we enforce output CarSellOrder data calculation.
-            // Any malicious action will lead to different inconsistent data to the honest nodes State.
-            newBoxes.add((NoncedBox) new CarSellOrderBox(carSellOrderInfo.getSellOrderBoxData(), nonce));
-
-        }
-        return Collections.unmodifiableList(newBoxes);
+    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData() {
+        return Arrays.asList((NoncedBoxData)carSellOrderInfo.getSellOrderBoxData());
     }
 
     // Define object serialization, that should serialize both parent class entries and CarSellOrderInfo as well
     @Override
     public byte[] bytes() {
         ByteArrayOutputStream inputsIdsStream = new ByteArrayOutputStream();
-        for(byte[] id: inputRegularBoxIds)
+        for(byte[] id: inputZenBoxIds)
             inputsIdsStream.write(id, 0, id.length);
 
-        byte[] inputRegularBoxIdsBytes = inputsIdsStream.toByteArray();
+        byte[] inputZenBoxIdsBytes = inputsIdsStream.toByteArray();
 
-        byte[] inputRegularBoxProofsBytes = regularBoxProofsSerializer.toBytes(inputRegularBoxProofs);
+        byte[] inputZenBoxProofsBytes = zenBoxProofsSerializer.toBytes(inputZenBoxProofs);
 
-        byte[] outputRegularBoxesDataBytes = regularBoxDataListSerializer.toBytes(outputRegularBoxesData);
+        byte[] outputZenBoxesDataBytes = zenBoxDataListSerializer.toBytes(outputZenBoxesData);
 
         byte[] carSellOrderInfoBytes = carSellOrderInfo.bytes();
 
         return Bytes.concat(
                 Longs.toByteArray(fee()),                               // 8 bytes
-                Longs.toByteArray(timestamp()),                         // 8 bytes
-                Ints.toByteArray(inputRegularBoxIdsBytes.length),       // 4 bytes
-                inputRegularBoxIdsBytes,                                // depends on previous value (>=4 bytes)
-                Ints.toByteArray(inputRegularBoxProofsBytes.length),    // 4 bytes
-                inputRegularBoxProofsBytes,                             // depends on previous value (>=4 bytes)
-                Ints.toByteArray(outputRegularBoxesDataBytes.length),   // 4 bytes
-                outputRegularBoxesDataBytes,                            // depends on previous value (>=4 bytes)
+                Ints.toByteArray(inputZenBoxIdsBytes.length),           // 4 bytes
+                inputZenBoxIdsBytes,                                    // depends on previous value (>=4 bytes)
+                Ints.toByteArray(inputZenBoxProofsBytes.length),        // 4 bytes
+                inputZenBoxProofsBytes,                                 // depends on previous value (>=4 bytes)
+                Ints.toByteArray(outputZenBoxesDataBytes.length),       // 4 bytes
+                outputZenBoxesDataBytes,                                // depends on previous value (>=4 bytes)
                 Ints.toByteArray(carSellOrderInfoBytes.length),         // 4 bytes
                 carSellOrderInfoBytes                                   // depends on previous value (>=4 bytes)
         );
@@ -128,16 +116,13 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         long fee = BytesUtils.getLong(bytes, offset);
         offset += 8;
 
-        long timestamp = BytesUtils.getLong(bytes, offset);
-        offset += 8;
-
         int batchSize = BytesUtils.getInt(bytes, offset);
         offset += 4;
 
-        ArrayList<byte[]> inputRegularBoxIds = new ArrayList<>();
+        ArrayList<byte[]> inputZenBoxIds = new ArrayList<>();
         int idLength = NodeViewModifier$.MODULE$.ModifierIdSize();
         while(batchSize > 0) {
-            inputRegularBoxIds.add(Arrays.copyOfRange(bytes, offset, offset + idLength));
+            inputZenBoxIds.add(Arrays.copyOfRange(bytes, offset, offset + idLength));
             offset += idLength;
             batchSize -= idLength;
         }
@@ -145,13 +130,13 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         batchSize = BytesUtils.getInt(bytes, offset);
         offset += 4;
 
-        List<Signature25519> inputRegularBoxProofs = regularBoxProofsSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
+        List<Signature25519> inputZenBoxProofs = zenBoxProofsSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
         offset += batchSize;
 
         batchSize = BytesUtils.getInt(bytes, offset);
         offset += 4;
 
-        List<RegularBoxData> outputRegularBoxesData = regularBoxDataListSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
+        List<ZenBoxData> outputZenBoxesData = zenBoxDataListSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
         offset += batchSize;
 
         batchSize = BytesUtils.getInt(bytes, offset);
@@ -159,7 +144,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
 
         CarSellOrderInfo carSellOrderInfo = CarSellOrderInfo.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
 
-        return new SellCarTransaction(inputRegularBoxIds, inputRegularBoxProofs, outputRegularBoxesData, carSellOrderInfo, fee, timestamp);
+        return new SellCarTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, carSellOrderInfo, fee);
     }
 
     // Set specific Serializer for SellCarTransaction class.

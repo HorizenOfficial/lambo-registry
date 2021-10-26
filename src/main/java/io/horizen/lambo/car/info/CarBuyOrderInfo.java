@@ -2,7 +2,7 @@ package io.horizen.lambo.car.info;
 
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-import com.horizen.box.data.RegularBoxData;
+import com.horizen.box.data.ZenBoxData;
 import io.horizen.lambo.car.box.CarSellOrderBox;
 import io.horizen.lambo.car.box.CarSellOrderBoxSerializer;
 import io.horizen.lambo.car.box.data.CarBoxData;
@@ -58,8 +58,8 @@ public final class CarBuyOrderInfo {
     }
 
     // Coins to be paid to the owner of Sell order in case if Buyer spent the Sell order.
-    public RegularBoxData getPaymentBoxData() {
-        return new RegularBoxData(
+    public ZenBoxData getPaymentBoxData() {
+        return new ZenBoxData(
                 new PublicKey25519Proposition(carSellOrderBoxToOpen.proposition().getOwnerPublicKeyBytes()),
                 carSellOrderBoxToOpen.getPrice()
         );

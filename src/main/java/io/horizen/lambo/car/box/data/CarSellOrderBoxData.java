@@ -71,11 +71,6 @@ public final class CarSellOrderBoxData extends AbstractNoncedBoxData<SellOrderPr
     }
 
     @Override
-    public byte boxDataTypeId() {
-        return CarRegistryBoxesDataIdsEnum.CarSellOrderBoxDataId.id();
-    }
-
-    @Override
     public byte[] bytes() {
         return Bytes.concat(
                 Ints.toByteArray(proposition().bytes().length),

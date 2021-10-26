@@ -15,14 +15,11 @@ import java.util.List;
 // TODO: prevent the declaration of CarBoxes which car information already exists in the previously added CarBoxes or CarSellOrderBoxes.
 public class CarRegistryApplicationState implements ApplicationState {
     @Override
-    public boolean validate(SidechainStateReader stateReader, SidechainBlock block) {
-        return true;
-    }
+    public void validate(SidechainStateReader stateReader, SidechainBlock block) throws IllegalArgumentException {}
 
     @Override
-    public boolean validate(SidechainStateReader stateReader, BoxTransaction<Proposition, Box<Proposition>> transaction) {
+    public void validate(SidechainStateReader stateReader, BoxTransaction<Proposition, Box<Proposition>> transaction) throws IllegalArgumentException {
         // TODO: here we expect to go though all CarDeclarationTransactions and verify that each CarBox reflects to unique Car.
-        return true;
     }
 
     @Override

@@ -13,8 +13,6 @@ import scorex.crypto.hash.Blake2b256;
 
 import java.util.Arrays;
 
-import static io.horizen.lambo.car.box.data.CarRegistryBoxesDataIdsEnum.CarBoxDataId;
-
 @JsonView(Views.Default.class)
 public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Proposition, CarBox, CarBoxData> {
 
@@ -69,11 +67,6 @@ public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Propos
     @Override
     public NoncedBoxDataSerializer serializer() {
         return CarBoxDataSerializer.getSerializer();
-    }
-
-    @Override
-    public byte boxDataTypeId() {
-        return CarBoxDataId.id();
     }
 
     @Override
