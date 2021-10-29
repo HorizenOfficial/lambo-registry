@@ -67,17 +67,8 @@ public class CarRegistryAppModule
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarBoxId.id(), (BoxSerializer) CarBoxSerializer.getSerializer());
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarSellOrderBoxId.id(), (BoxSerializer) CarSellOrderBoxSerializer.getSerializer());
 
-        // Specify how to serialize custom BoxData.
-        HashMap<Byte, NoncedBoxDataSerializer<NoncedBoxData<Proposition, NoncedBox<Proposition>>>> customBoxDataSerializers = new HashMap<>();
-        customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarBoxDataId.id(), (NoncedBoxDataSerializer) CarBoxDataSerializer.getSerializer());
-        customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarSellOrderBoxDataId.id(), (NoncedBoxDataSerializer) CarSellOrderBoxDataSerializer.getSerializer());
-
         // No custom secrets for CarRegistry app.
         HashMap<Byte, SecretSerializer<Secret>> customSecretSerializers = new HashMap<>();
-
-        // Specify how to serialize custom Proofs.
-        HashMap<Byte, ProofSerializer<Proof<Proposition>>> customProofSerializers = new HashMap<>();
-        customProofSerializers.put(CarRegistryProofsIdsEnum.SellOrderSpendingProofId.id(), (ProofSerializer) SellOrderSpendingProofSerializer.getSerializer());
 
         // Specify how to serialize custom Transaction.
         HashMap<Byte, TransactionSerializer<BoxTransaction<Proposition, Box<Proposition>>>> customTransactionSerializers = new HashMap<>();
@@ -101,6 +92,7 @@ public class CarRegistryAppModule
         File walletTransactionStore = new File(dataDirPath + "/walletTransaction");
         File walletForgingBoxesInfoStorage = new File(dataDirPath + "/walletForgingStake");
         File stateStore = new File(dataDirPath + "/state");
+        File stateForgerBoxStore = new File(dataDirPath + "/stateForgerBox");
         File historyStore = new File(dataDirPath + "/history");
         File consensusStore = new File(dataDirPath + "/consensusData");
 
@@ -124,15 +116,9 @@ public class CarRegistryAppModule
         bind(new TypeLiteral<HashMap<Byte, BoxSerializer<Box<Proposition>>>>() {})
                 .annotatedWith(Names.named("CustomBoxSerializers"))
                 .toInstance(customBoxSerializers);
-        bind(new TypeLiteral<HashMap<Byte, NoncedBoxDataSerializer<NoncedBoxData<Proposition, NoncedBox<Proposition>>>>>() {})
-                .annotatedWith(Names.named("CustomBoxDataSerializers"))
-                .toInstance(customBoxDataSerializers);
         bind(new TypeLiteral<HashMap<Byte, SecretSerializer<Secret>>>() {})
                 .annotatedWith(Names.named("CustomSecretSerializers"))
                 .toInstance(customSecretSerializers);
-        bind(new TypeLiteral<HashMap<Byte, ProofSerializer<Proof<Proposition>>>>() {})
-                .annotatedWith(Names.named("CustomProofSerializers"))
-                .toInstance(customProofSerializers);
         bind(new TypeLiteral<HashMap<Byte, TransactionSerializer<BoxTransaction<Proposition, Box<Proposition>>>>>() {})
                 .annotatedWith(Names.named("CustomTransactionSerializers"))
                 .toInstance(customTransactionSerializers);
@@ -160,6 +146,9 @@ public class CarRegistryAppModule
         bind(Storage.class)
                 .annotatedWith(Names.named("StateStorage"))
                 .toInstance(IODBStorageUtil.getStorage(stateStore));
+        bind(Storage.class)
+                .annotatedWith(Names.named("StateForgerBoxStorage"))
+                .toInstance(IODBStorageUtil.getStorage(stateForgerBoxStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("HistoryStorage"))
                 .toInstance(IODBStorageUtil.getStorage(historyStore));
