@@ -37,13 +37,19 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     // new instance of CarBoxData the owned by the buyer and ZenBoxData with the payment to previous owner.
     private final CarBuyOrderInfo carBuyOrderInfo;
 
+    public final static byte BUY_CAR_TRANSACTION_VERSION = 1;
+
+    private byte version;
+
     public BuyCarTransaction(List<byte[]> inputZenBoxIds,
                              List<Signature25519> inputZenBoxProofs,
                              List<ZenBoxData> outputZenBoxesData,
                              CarBuyOrderInfo carBuyOrderInfo,
-                             long fee) {
+                             long fee,
+                             byte version) {
         super(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, fee);
         this.carBuyOrderInfo = carBuyOrderInfo;
+        this.version = version;
     }
 
     // Specify the unique custom transaction id.
@@ -55,6 +61,21 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     @Override
     protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData() {
         return Arrays.asList((NoncedBoxData)carBuyOrderInfo.getNewOwnerCarBoxData());
+    }
+
+    @Override
+    public byte[] customDataMessageToSign() {
+        return new byte[0];
+    }
+
+    @Override
+    public byte[] customFieldsData() {
+        return carBuyOrderInfo.getNewOwnerCarBoxData().bytes();
+    }
+
+    @Override
+    public byte version() {
+        return version;
     }
 
     // Override unlockers to contains ZenBoxes from the parent class appended with CarSellOrderBox entry.
@@ -96,6 +117,7 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
         byte[] carBuyOrderInfoBytes = carBuyOrderInfo.bytes();
 
         return Bytes.concat(
+                new byte[] {version()},
                 Longs.toByteArray(fee()),                               // 8 bytes
                 Ints.toByteArray(inputZenBoxIdsBytes.length),           // 4 bytes
                 inputZenBoxIdsBytes,                                    // depends on previous value (>=4 bytes)
@@ -111,6 +133,9 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
     // Define object deserialization similar to 'toBytes()' representation.
     public static BuyCarTransaction parseBytes(byte[] bytes) {
         int offset = 0;
+
+        byte version = bytes[offset];
+        offset += 1;
 
         long fee = BytesUtils.getLong(bytes, offset);
         offset += 8;
@@ -143,7 +168,7 @@ public final class BuyCarTransaction extends AbstractRegularTransaction {
 
         CarBuyOrderInfo carBuyOrderInfo = CarBuyOrderInfo.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
 
-        return new BuyCarTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, carBuyOrderInfo, fee);
+        return new BuyCarTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, carBuyOrderInfo, fee, version);
     }
 
     // Set specific Serializer for BuyCarTransaction class.

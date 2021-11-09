@@ -34,7 +34,6 @@ import io.horizen.lambo.car.transaction.BuyCarTransaction;
 import io.horizen.lambo.car.transaction.CarDeclarationTransaction;
 import io.horizen.lambo.car.transaction.SellCarTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import scala.Some;
 
 import java.util.*;
 
@@ -139,7 +138,8 @@ public class CarApi extends ApplicationApiGroup {
                     fakeProofs,
                     regularOutputs,
                     carBoxData,
-                    ent.fee);
+                    ent.fee,
+                    CarDeclarationTransaction.CAR_DECLARATION_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -156,7 +156,8 @@ public class CarApi extends ApplicationApiGroup {
                     proofs,
                     regularOutputs,
                     carBoxData,
-                    ent.fee);
+                    ent.fee,
+                    CarDeclarationTransaction.CAR_DECLARATION_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) signedTransaction)));
         }
@@ -228,7 +229,8 @@ public class CarApi extends ApplicationApiGroup {
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeSaleOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    SellCarTransaction.CAR_SELL_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -253,7 +255,8 @@ public class CarApi extends ApplicationApiGroup {
                     regularInputProofs,
                     regularOutputs,
                     saleOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    SellCarTransaction.CAR_SELL_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         }
@@ -326,7 +329,8 @@ public class CarApi extends ApplicationApiGroup {
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeBuyOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -351,7 +355,8 @@ public class CarApi extends ApplicationApiGroup {
                     regularInputProofs,
                     regularOutputs,
                     buyOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         } catch (Exception e) {
@@ -426,7 +431,8 @@ public class CarApi extends ApplicationApiGroup {
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeBuyOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -451,7 +457,8 @@ public class CarApi extends ApplicationApiGroup {
                     regularInputProofs,
                     regularOutputs,
                     buyOrderInfo,
-                    ent.fee);
+                    ent.fee,
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         } catch (Exception e) {

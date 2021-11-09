@@ -8,7 +8,6 @@ import com.horizen.box.NoncedBox;
 import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.ZenBoxData;
 import com.horizen.transaction.AbstractRegularTransaction;
-import io.horizen.lambo.car.box.CarSellOrderBox;
 import io.horizen.lambo.car.info.CarSellOrderInfo;
 import com.horizen.proof.Proof;
 import com.horizen.proof.Signature25519;
@@ -20,7 +19,6 @@ import scorex.core.NodeViewModifier$;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.SellCarTransactionId;
@@ -38,13 +36,19 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     // For example, if CarBox was opened, the CarSellOrder obliged to contains the same car attributes and owner info.
     private final CarSellOrderInfo carSellOrderInfo;
 
+    public final static byte CAR_SELL_TRANSACTION_VERSION = 1;
+
+    private byte version;
+
     public SellCarTransaction(List<byte[]> inputZenBoxIds,
                               List<Signature25519> inputZenBoxProofs,
                               List<ZenBoxData> outputZenBoxesData,
                               CarSellOrderInfo carSellOrderInfo,
-                              long fee) {
+                              long fee,
+                              byte version) {
         super(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, fee);
         this.carSellOrderInfo = carSellOrderInfo;
+        this.version = version;
     }
 
     // Specify the unique custom transaction id.
@@ -81,6 +85,21 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         return Arrays.asList((NoncedBoxData)carSellOrderInfo.getSellOrderBoxData());
     }
 
+    @Override
+    public byte[] customFieldsData() {
+        return carSellOrderInfo.getSellOrderBoxData().bytes();
+    }
+
+    @Override
+    public byte[] customDataMessageToSign() {
+        return new byte[0];
+    }
+
+    @Override
+    public byte version() {
+        return version;
+    }
+
     // Define object serialization, that should serialize both parent class entries and CarSellOrderInfo as well
     @Override
     public byte[] bytes() {
@@ -97,6 +116,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
         byte[] carSellOrderInfoBytes = carSellOrderInfo.bytes();
 
         return Bytes.concat(
+                new byte[] {version()},                                 // 1 byte
                 Longs.toByteArray(fee()),                               // 8 bytes
                 Ints.toByteArray(inputZenBoxIdsBytes.length),           // 4 bytes
                 inputZenBoxIdsBytes,                                    // depends on previous value (>=4 bytes)
@@ -112,6 +132,9 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     // Define object deserialization similar to 'toBytes()' representation.
     public static SellCarTransaction parseBytes(byte[] bytes) {
         int offset = 0;
+
+        byte version = bytes[offset];
+        offset += 1;
 
         long fee = BytesUtils.getLong(bytes, offset);
         offset += 8;
@@ -144,7 +167,7 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
 
         CarSellOrderInfo carSellOrderInfo = CarSellOrderInfo.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
 
-        return new SellCarTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, carSellOrderInfo, fee);
+        return new SellCarTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, carSellOrderInfo, fee, version);
     }
 
     // Set specific Serializer for SellCarTransaction class.

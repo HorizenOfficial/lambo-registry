@@ -23,7 +23,7 @@ The Lambo Registry application is available and tested on Linux and Windows (64b
 
 **Requirements**
 
-* Java 8 or newer (Java 11 recommended)
+* Java 11 or newer
 * Maven
 
 **Bootstrap and run**
@@ -98,6 +98,5 @@ curl --location --request POST '127.0.0.1:9085/carApi/acceptCarSellOrder' \
     "fee": 100
 }'
 ```
-
-
+All these operations produce transaction bytes and don't send them to mempool. To apply them generated transaction bytes should added to mempool with sendTransaction command.  
 

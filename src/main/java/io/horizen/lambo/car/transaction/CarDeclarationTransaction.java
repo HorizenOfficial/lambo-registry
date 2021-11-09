@@ -7,7 +7,6 @@ import com.horizen.box.NoncedBox;
 import com.horizen.box.data.NoncedBoxData;
 import com.horizen.box.data.ZenBoxData;
 import com.horizen.transaction.AbstractRegularTransaction;
-import io.horizen.lambo.car.box.CarBox;
 import io.horizen.lambo.car.box.data.CarBoxData;
 import io.horizen.lambo.car.box.data.CarBoxDataSerializer;
 import com.horizen.proof.Signature25519;
@@ -19,9 +18,7 @@ import scorex.core.NodeViewModifier$;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum.CarDeclarationTransactionId;
 
@@ -34,13 +31,19 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
 
     private final CarBoxData outputCarBoxData;
 
+    public final static byte CAR_DECLARATION_TRANSACTION_VERSION = 1;
+
+    private byte version;
+
     public CarDeclarationTransaction(List<byte[]> inputZenBoxIds,
                                      List<Signature25519> inputZenBoxProofs,
                                      List<ZenBoxData> outputZenBoxesData,
                                      CarBoxData outputCarBoxData,
-                                     long fee) {
+                                     long fee,
+                                     byte version) {
         super(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, fee);
         this.outputCarBoxData = outputCarBoxData;
+        this.version = version;
     }
 
     // Specify the unique custom transaction id.
@@ -52,6 +55,21 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     @Override
     protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData() {
         return Arrays.asList((NoncedBoxData) outputCarBoxData);
+    }
+
+    @Override
+    public byte[] customFieldsData() {
+        return outputCarBoxData.bytes();
+    }
+
+    @Override
+    public byte version() {
+        return version;
+    }
+
+    @Override
+    public byte[] customDataMessageToSign() {
+        return new byte[0];
     }
 
     // Define object serialization, that should serialize both parent class entries and CarBoxData as well
@@ -70,6 +88,7 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
         byte[] outputCarBoxDataBytes = outputCarBoxData.bytes();
 
         return Bytes.concat(
+                new byte[] {version()},
                 Longs.toByteArray(fee()),                               // 8 bytes
                 Ints.toByteArray(inputZenBoxIdsBytes.length),           // 4 bytes
                 inputZenBoxIdsBytes,                                    // depends on previous value (>=4 bytes)
@@ -85,6 +104,9 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     // Define object deserialization similar to 'toBytes()' representation.
     public static CarDeclarationTransaction parseBytes(byte[] bytes) {
         int offset = 0;
+
+        byte version = bytes[offset];
+        offset += 1;
 
         long fee = BytesUtils.getLong(bytes, offset);
         offset += 8;
@@ -117,7 +139,7 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
 
         CarBoxData outputCarBoxData = CarBoxDataSerializer.getSerializer().parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
 
-        return new CarDeclarationTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, outputCarBoxData, fee);
+        return new CarDeclarationTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, outputCarBoxData, fee, version);
     }
 
     // Set specific Serializer for CarDeclarationTransaction class.
