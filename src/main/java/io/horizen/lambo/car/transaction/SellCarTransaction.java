@@ -4,8 +4,8 @@ import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import com.horizen.box.BoxUnlocker;
-import com.horizen.box.NoncedBox;
-import com.horizen.box.data.NoncedBoxData;
+import com.horizen.box.Box;
+import com.horizen.box.data.BoxData;
 import com.horizen.box.data.ZenBoxData;
 import com.horizen.transaction.AbstractRegularTransaction;
 import io.horizen.lambo.car.info.CarSellOrderInfo;
@@ -81,8 +81,8 @@ public final class SellCarTransaction extends AbstractRegularTransaction {
     }
 
     @Override
-    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData() {
-        return Arrays.asList((NoncedBoxData)carSellOrderInfo.getSellOrderBoxData());
+    protected List<BoxData<Proposition, Box<Proposition>>> getCustomOutputData() {
+        return Arrays.asList((BoxData)carSellOrderInfo.getSellOrderBoxData());
     }
 
     @Override

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.horizen.box.data.AbstractNoncedBoxData;
-import com.horizen.box.data.NoncedBoxDataSerializer;
+import com.horizen.box.data.AbstractBoxData;
+import com.horizen.box.data.BoxDataSerializer;
 import io.horizen.lambo.car.box.CarSellOrderBox;
 import io.horizen.lambo.car.proposition.SellOrderProposition;
 import io.horizen.lambo.car.proposition.SellOrderPropositionSerializer;
@@ -15,7 +15,7 @@ import scorex.crypto.hash.Blake2b256;
 import java.util.Arrays;
 
 @JsonView(Views.Default.class)
-public final class CarSellOrderBoxData extends AbstractNoncedBoxData<SellOrderProposition, CarSellOrderBox, CarSellOrderBoxData> {
+public final class CarSellOrderBoxData extends AbstractBoxData<SellOrderProposition, CarSellOrderBox, CarSellOrderBoxData> {
 
     // Car sell order attributes is similar to car attributes.
     // The only change is that Sell order contains the car price as well.
@@ -66,7 +66,7 @@ public final class CarSellOrderBoxData extends AbstractNoncedBoxData<SellOrderPr
     }
 
     @Override
-    public NoncedBoxDataSerializer serializer() {
+    public BoxDataSerializer serializer() {
         return CarSellOrderBoxDataSerializer.getSerializer();
     }
 

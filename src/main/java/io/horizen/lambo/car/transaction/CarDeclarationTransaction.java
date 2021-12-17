@@ -3,8 +3,8 @@ package io.horizen.lambo.car.transaction;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
-import com.horizen.box.NoncedBox;
-import com.horizen.box.data.NoncedBoxData;
+import com.horizen.box.Box;
+import com.horizen.box.data.BoxData;
 import com.horizen.box.data.ZenBoxData;
 import com.horizen.transaction.AbstractRegularTransaction;
 import io.horizen.lambo.car.box.data.CarBoxData;
@@ -53,8 +53,8 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     }
 
     @Override
-    protected List<NoncedBoxData<Proposition, NoncedBox<Proposition>>> getCustomOutputData() {
-        return Arrays.asList((NoncedBoxData) outputCarBoxData);
+    protected List<BoxData<Proposition, Box<Proposition>>> getCustomOutputData() {
+        return Arrays.asList((BoxData) outputCarBoxData);
     }
 
     @Override

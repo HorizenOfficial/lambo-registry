@@ -3,8 +3,8 @@ package io.horizen.lambo.car.box.data;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-import com.horizen.box.data.AbstractNoncedBoxData;
-import com.horizen.box.data.NoncedBoxDataSerializer;
+import com.horizen.box.data.AbstractBoxData;
+import com.horizen.box.data.BoxDataSerializer;
 import io.horizen.lambo.car.box.CarBox;
 import com.horizen.proposition.PublicKey25519Proposition;
 import com.horizen.proposition.PublicKey25519PropositionSerializer;
@@ -14,7 +14,7 @@ import scorex.crypto.hash.Blake2b256;
 import java.util.Arrays;
 
 @JsonView(Views.Default.class)
-public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Proposition, CarBox, CarBoxData> {
+public final class CarBoxData extends AbstractBoxData<PublicKey25519Proposition, CarBox, CarBoxData> {
 
     // In CarRegistry example we defined 4 main car attributes:
     private final String vin;   // Vehicle Identification Number
@@ -25,7 +25,7 @@ public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Propos
     // Additional check on VIN length can be done as well, but not present as a part of current example.
     public CarBoxData(PublicKey25519Proposition proposition, String vin,
                       int year, String model, String color) {
-        //AbstractNoncedBoxData requires value to be set in constructor. However, our car is unique object without any value in ZEN by default. So just set value to 1
+        //AbstractBoxData requires value to be set in constructor. However, our car is unique object without any value in ZEN by default. So just set value to 1
         super(proposition, 1);
         this.vin = vin;
         this.year = year;
@@ -65,7 +65,7 @@ public final class CarBoxData extends AbstractNoncedBoxData<PublicKey25519Propos
     }
 
     @Override
-    public NoncedBoxDataSerializer serializer() {
+    public BoxDataSerializer serializer() {
         return CarBoxDataSerializer.getSerializer();
     }
 

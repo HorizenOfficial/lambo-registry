@@ -1,10 +1,10 @@
 package io.horizen.lambo.car.box.data;
 
-import com.horizen.box.data.NoncedBoxDataSerializer;
+import com.horizen.box.data.BoxDataSerializer;
 import scorex.util.serialization.Reader;
 import scorex.util.serialization.Writer;
 
-public final class CarSellOrderBoxDataSerializer implements NoncedBoxDataSerializer<CarSellOrderBoxData> {
+public final class CarSellOrderBoxDataSerializer implements BoxDataSerializer<CarSellOrderBoxData> {
 
     private static final CarSellOrderBoxDataSerializer serializer = new CarSellOrderBoxDataSerializer();
 
