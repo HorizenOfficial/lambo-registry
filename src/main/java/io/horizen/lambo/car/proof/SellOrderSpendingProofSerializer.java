@@ -18,11 +18,15 @@ public final class SellOrderSpendingProofSerializer implements ProofSerializer<S
 
     @Override
     public void serialize(SellOrderSpendingProof boxData, Writer writer) {
-        writer.putBytes(boxData.bytes());
+        writer.put(boxData.isSeller() ? (byte)1 : (byte)0);
+        writer.putBytes(boxData.signatureBytes());
     }
 
     @Override
     public SellOrderSpendingProof parse(Reader reader) {
-        return SellOrderSpendingProof.parseBytes(reader.getBytes(reader.remaining()));
+        boolean isSeller = reader.getByte() != 0;
+        byte[] signatureBytes = reader.getBytes(SellOrderSpendingProof.SIGNATURE_LENGTH);
+
+        return new SellOrderSpendingProof(signatureBytes, isSeller);
     }
 }

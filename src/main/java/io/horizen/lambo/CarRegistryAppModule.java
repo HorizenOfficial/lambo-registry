@@ -7,33 +7,21 @@ import com.horizen.SidechainSettings;
 import com.horizen.api.http.ApplicationApiGroup;
 import com.horizen.box.Box;
 import com.horizen.box.BoxSerializer;
-import com.horizen.box.NoncedBox;
-import com.horizen.box.data.NoncedBoxData;
-import com.horizen.box.data.NoncedBoxDataSerializer;
-import com.horizen.companion.SidechainBoxesDataCompanion;
-import com.horizen.companion.SidechainProofsCompanion;
 import com.horizen.companion.SidechainTransactionsCompanion;
+import com.horizen.storage.leveldb.VersionedLevelDbStorageAdapter;
 import io.horizen.lambo.car.api.CarApi;
 import io.horizen.lambo.car.box.CarBoxSerializer;
 import io.horizen.lambo.car.box.CarRegistryBoxesIdsEnum;
 import io.horizen.lambo.car.box.CarSellOrderBoxSerializer;
-import io.horizen.lambo.car.box.data.CarBoxDataSerializer;
-import io.horizen.lambo.car.box.data.CarRegistryBoxesDataIdsEnum;
-import io.horizen.lambo.car.box.data.CarSellOrderBoxDataSerializer;
-import io.horizen.lambo.car.proof.CarRegistryProofsIdsEnum;
-import io.horizen.lambo.car.proof.SellOrderSpendingProofSerializer;
 import io.horizen.lambo.car.transaction.BuyCarTransactionSerializer;
 import io.horizen.lambo.car.transaction.CarDeclarationTransactionSerializer;
 import io.horizen.lambo.car.transaction.CarRegistryTransactionsIdsEnum;
 import io.horizen.lambo.car.transaction.SellCarTransactionSerializer;
-import com.horizen.proof.Proof;
-import com.horizen.proof.ProofSerializer;
 import com.horizen.proposition.Proposition;
 import com.horizen.secret.Secret;
 import com.horizen.secret.SecretSerializer;
 import com.horizen.settings.SettingsReader;
 import com.horizen.state.ApplicationState;
-import com.horizen.storage.IODBStorageUtil;
 import com.horizen.storage.Storage;
 import com.horizen.transaction.BoxTransaction;
 import com.horizen.transaction.TransactionSerializer;
@@ -69,17 +57,8 @@ public class CarRegistryAppModule
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarBoxId.id(), (BoxSerializer) CarBoxSerializer.getSerializer());
         customBoxSerializers.put(CarRegistryBoxesIdsEnum.CarSellOrderBoxId.id(), (BoxSerializer) CarSellOrderBoxSerializer.getSerializer());
 
-        // Specify how to serialize custom BoxData.
-        HashMap<Byte, NoncedBoxDataSerializer<NoncedBoxData<Proposition, NoncedBox<Proposition>>>> customBoxDataSerializers = new HashMap<>();
-        customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarBoxDataId.id(), (NoncedBoxDataSerializer) CarBoxDataSerializer.getSerializer());
-        customBoxDataSerializers.put(CarRegistryBoxesDataIdsEnum.CarSellOrderBoxDataId.id(), (NoncedBoxDataSerializer) CarSellOrderBoxDataSerializer.getSerializer());
-
         // No custom secrets for CarRegistry app.
         HashMap<Byte, SecretSerializer<Secret>> customSecretSerializers = new HashMap<>();
-
-        // Specify how to serialize custom Proofs.
-        HashMap<Byte, ProofSerializer<Proof<Proposition>>> customProofSerializers = new HashMap<>();
-        customProofSerializers.put(CarRegistryProofsIdsEnum.SellOrderSpendingProofId.id(), (ProofSerializer) SellOrderSpendingProofSerializer.getSerializer());
 
         // Specify how to serialize custom Transaction.
         HashMap<Byte, TransactionSerializer<BoxTransaction<Proposition, Box<Proposition>>>> customTransactionSerializers = new HashMap<>();
@@ -88,10 +67,7 @@ public class CarRegistryAppModule
         customTransactionSerializers.put(CarRegistryTransactionsIdsEnum.BuyCarTransactionId.id(), (TransactionSerializer) BuyCarTransactionSerializer.getSerializer());
 
         // Create companions that will allow to serialize and deserialize any kind of core and custom types specified.
-        SidechainBoxesDataCompanion sidechainBoxesDataCompanion = new SidechainBoxesDataCompanion(customBoxDataSerializers);
-        SidechainProofsCompanion sidechainProofsCompanion = new SidechainProofsCompanion(customProofSerializers);
-        SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(
-                customTransactionSerializers, sidechainBoxesDataCompanion, sidechainProofsCompanion);
+        SidechainTransactionsCompanion transactionsCompanion = new SidechainTransactionsCompanion(customTransactionSerializers);
 
 
         // Define Application state and wallet logic:
@@ -105,7 +81,10 @@ public class CarRegistryAppModule
         File walletBoxStore = new File(dataDirPath + "/wallet");
         File walletTransactionStore = new File(dataDirPath + "/walletTransaction");
         File walletForgingBoxesInfoStorage = new File(dataDirPath + "/walletForgingStake");
+        File walletCswDataStorage = new File(dataDirPath + "/walletCswDataStorage");
         File stateStore = new File(dataDirPath + "/state");
+        File stateForgerBoxStore = new File(dataDirPath + "/stateForgerBox");
+        File stateUtxoMerkleTreeStore = new File(dataDirPath + "/stateUtxoMerkleTree");
         File historyStore = new File(dataDirPath + "/history");
         File consensusStore = new File(dataDirPath + "/consensusData");
 
@@ -129,15 +108,9 @@ public class CarRegistryAppModule
         bind(new TypeLiteral<HashMap<Byte, BoxSerializer<Box<Proposition>>>>() {})
                 .annotatedWith(Names.named("CustomBoxSerializers"))
                 .toInstance(customBoxSerializers);
-        bind(new TypeLiteral<HashMap<Byte, NoncedBoxDataSerializer<NoncedBoxData<Proposition, NoncedBox<Proposition>>>>>() {})
-                .annotatedWith(Names.named("CustomBoxDataSerializers"))
-                .toInstance(customBoxDataSerializers);
         bind(new TypeLiteral<HashMap<Byte, SecretSerializer<Secret>>>() {})
                 .annotatedWith(Names.named("CustomSecretSerializers"))
                 .toInstance(customSecretSerializers);
-        bind(new TypeLiteral<HashMap<Byte, ProofSerializer<Proof<Proposition>>>>() {})
-                .annotatedWith(Names.named("CustomProofSerializers"))
-                .toInstance(customProofSerializers);
         bind(new TypeLiteral<HashMap<Byte, TransactionSerializer<BoxTransaction<Proposition, Box<Proposition>>>>>() {})
                 .annotatedWith(Names.named("CustomTransactionSerializers"))
                 .toInstance(customTransactionSerializers);
@@ -152,25 +125,34 @@ public class CarRegistryAppModule
 
         bind(Storage.class)
                 .annotatedWith(Names.named("SecretStorage"))
-                .toInstance(IODBStorageUtil.getStorage(secretStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(secretStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("WalletBoxStorage"))
-                .toInstance(IODBStorageUtil.getStorage(walletBoxStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(walletBoxStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("WalletTransactionStorage"))
-                .toInstance(IODBStorageUtil.getStorage(walletTransactionStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(walletTransactionStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("WalletForgingBoxesInfoStorage"))
-                .toInstance(IODBStorageUtil.getStorage(walletForgingBoxesInfoStorage));
+                .toInstance(new VersionedLevelDbStorageAdapter(walletForgingBoxesInfoStorage));
+        bind(Storage.class)
+                .annotatedWith(Names.named("WalletCswDataStorage"))
+                .toInstance(new VersionedLevelDbStorageAdapter(walletCswDataStorage));
         bind(Storage.class)
                 .annotatedWith(Names.named("StateStorage"))
-                .toInstance(IODBStorageUtil.getStorage(stateStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(stateStore));
+        bind(Storage.class)
+                .annotatedWith(Names.named("StateForgerBoxStorage"))
+                .toInstance(new VersionedLevelDbStorageAdapter(stateForgerBoxStore));
+        bind(Storage.class)
+                .annotatedWith(Names.named("StateUtxoMerkleTreeStorage"))
+                .toInstance(new VersionedLevelDbStorageAdapter(stateUtxoMerkleTreeStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("HistoryStorage"))
-                .toInstance(IODBStorageUtil.getStorage(historyStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(historyStore));
         bind(Storage.class)
                 .annotatedWith(Names.named("ConsensusStorage"))
-                .toInstance(IODBStorageUtil.getStorage(consensusStore));
+                .toInstance(new VersionedLevelDbStorageAdapter(consensusStore));
 
         bind(new TypeLiteral<List<ApplicationApiGroup>> () {})
                 .annotatedWith(Names.named("CustomApiGroups"))

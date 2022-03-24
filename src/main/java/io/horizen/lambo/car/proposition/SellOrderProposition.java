@@ -19,7 +19,7 @@ import java.util.Arrays;
 // Declare default JSON view for SellOrderProposition object.
 @JsonView(Views.Default.class)
 public final class SellOrderProposition implements ProofOfKnowledgeProposition<PrivateKey25519> {
-    private static final int KEY_LENGTH = Ed25519.keyLength();
+    static final int KEY_LENGTH = Ed25519.publicKeyLength();
 
     // Specify json attribute name for the ownerPublicKeyBytes field.
     @JsonProperty("ownerPublicKey")
@@ -53,26 +53,6 @@ public final class SellOrderProposition implements ProofOfKnowledgeProposition<P
 
     public byte[] getBuyerPublicKeyBytes() {
         return Arrays.copyOf(buyerPublicKeyBytes, KEY_LENGTH);
-    }
-
-    @Override
-    public byte[] bytes() {
-        return Bytes.concat(
-                ownerPublicKeyBytes,
-                buyerPublicKeyBytes
-        );
-    }
-
-    public static SellOrderProposition parseBytes(byte[] bytes) {
-        int offset = 0;
-
-        byte[] ownerPublicKeyBytes = Arrays.copyOfRange(bytes, offset, offset + KEY_LENGTH);
-        offset += KEY_LENGTH;
-
-        byte[] buyerPublicKeyBytes = Arrays.copyOfRange(bytes, offset, offset + KEY_LENGTH);
-
-        return new SellOrderProposition(ownerPublicKeyBytes, buyerPublicKeyBytes);
-
     }
 
     @Override

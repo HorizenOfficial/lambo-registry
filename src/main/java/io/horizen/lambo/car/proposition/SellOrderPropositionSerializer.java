@@ -18,11 +18,15 @@ public final class SellOrderPropositionSerializer implements PropositionSerializ
 
     @Override
     public void serialize(SellOrderProposition proposition, Writer writer) {
-        writer.putBytes(proposition.bytes());
+        writer.putBytes(proposition.getOwnerPublicKeyBytes());
+        writer.putBytes(proposition.getBuyerPublicKeyBytes());
     }
 
     @Override
     public SellOrderProposition parse(Reader reader) {
-        return SellOrderProposition.parseBytes(reader.getBytes(reader.remaining()));
+        byte[] ownerPublicKeyBytes = reader.getBytes(SellOrderProposition.KEY_LENGTH);
+        byte[] buyerPublicKeyBytes = reader.getBytes(SellOrderProposition.KEY_LENGTH);
+
+        return new SellOrderProposition(ownerPublicKeyBytes, buyerPublicKeyBytes);
     }
 }

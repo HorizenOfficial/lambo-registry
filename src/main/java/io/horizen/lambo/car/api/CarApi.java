@@ -7,8 +7,8 @@ import com.horizen.api.http.ApplicationApiGroup;
 import com.horizen.api.http.ErrorResponse;
 import com.horizen.api.http.SuccessResponse;
 import com.horizen.box.Box;
-import com.horizen.box.RegularBox;
-import com.horizen.box.data.RegularBoxData;
+import com.horizen.box.ZenBox;
+import com.horizen.box.data.ZenBoxData;
 import com.horizen.companion.SidechainTransactionsCompanion;
 import com.horizen.node.NodeMemoryPool;
 import com.horizen.node.SidechainNodeView;
@@ -34,8 +34,6 @@ import io.horizen.lambo.car.transaction.BuyCarTransaction;
 import io.horizen.lambo.car.transaction.CarDeclarationTransaction;
 import io.horizen.lambo.car.transaction.SellCarTransaction;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import scala.Option;
-import scala.Some;
 
 import java.util.*;
 
@@ -100,11 +98,11 @@ public class CarApi extends ApplicationApiGroup {
 
             // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
-            List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
+            List<Box<Proposition>> ZenBoxes = view.getNodeWallet().boxesOfType(ZenBox.class, boxIdsToExclude);
             int index = 0;
-            while (amountToPay > 0 && index < regularBoxes.size()) {
-                paymentBoxes.add(regularBoxes.get(index));
-                amountToPay -= regularBoxes.get(index).value();
+            while (amountToPay > 0 && index < ZenBoxes.size()) {
+                paymentBoxes.add(ZenBoxes.get(index));
+                amountToPay -= ZenBoxes.get(index).value();
                 index++;
             }
 
@@ -114,9 +112,9 @@ public class CarApi extends ApplicationApiGroup {
 
             // Set change if exists
             long change = Math.abs(amountToPay);
-            List<RegularBoxData> regularOutputs = new ArrayList<>();
+            List<ZenBoxData> regularOutputs = new ArrayList<>();
             if (change > 0) {
-                regularOutputs.add(new RegularBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
+                regularOutputs.add(new ZenBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
             }
 
             // Creation of real proof requires transaction bytes. Transaction creation function, in turn, requires some proofs.
@@ -134,7 +132,6 @@ public class CarApi extends ApplicationApiGroup {
             }
 
             List fakeProofs = Collections.nCopies(inputIds.size(), null);
-            Long timestamp = System.currentTimeMillis();
 
             CarDeclarationTransaction unsignedTransaction = new CarDeclarationTransaction(
                     inputIds,
@@ -142,7 +139,7 @@ public class CarApi extends ApplicationApiGroup {
                     regularOutputs,
                     carBoxData,
                     ent.fee,
-                    timestamp);
+                    CarDeclarationTransaction.CAR_DECLARATION_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -160,12 +157,12 @@ public class CarApi extends ApplicationApiGroup {
                     regularOutputs,
                     carBoxData,
                     ent.fee,
-                    timestamp);
+                    CarDeclarationTransaction.CAR_DECLARATION_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) signedTransaction)));
         }
         catch (Exception e) {
-            return new CarResponseError("0102", "Error during Car declaration.", Some.apply(e));
+            return new CarResponseError("0102", "Error during Car declaration.", Optional.of(e));
         }
     }
 
@@ -199,11 +196,11 @@ public class CarApi extends ApplicationApiGroup {
             long amountToPay = ent.fee;
             // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
-            List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
+            List<Box<Proposition>> ZenBoxes = view.getNodeWallet().boxesOfType(ZenBox.class, boxIdsToExclude);
             int index = 0;
-            while (amountToPay > 0 && index < regularBoxes.size()) {
-                paymentBoxes.add(regularBoxes.get(index));
-                amountToPay -= regularBoxes.get(index).value();
+            while (amountToPay > 0 && index < ZenBoxes.size()) {
+                paymentBoxes.add(ZenBoxes.get(index));
+                amountToPay -= ZenBoxes.get(index).value();
                 index++;
             }
 
@@ -213,29 +210,27 @@ public class CarApi extends ApplicationApiGroup {
 
             // Set change if exists
             long change = Math.abs(amountToPay);
-            List<RegularBoxData> regularOutputs = new ArrayList<>();
+            List<ZenBoxData> regularOutputs = new ArrayList<>();
             if (change > 0) {
-                regularOutputs.add(new RegularBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
+                regularOutputs.add(new ZenBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
             }
 
-            List<byte[]> inputRegularBoxIds = new ArrayList<>();
+            List<byte[]> inputZenBoxIds = new ArrayList<>();
             for (Box b : paymentBoxes) {
-                inputRegularBoxIds.add(b.id());
+                inputZenBoxIds.add(b.id());
             }
 
             // Create fake proofs to be able to create transaction to be signed.
             CarSellOrderInfo fakeSaleOrderInfo = new CarSellOrderInfo(carBox, null, ent.sellPrice, carBuyerProposition);
-            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputRegularBoxIds.size(), null);
-
-            Long timestamp = System.currentTimeMillis();
+            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputZenBoxIds.size(), null);
 
             SellCarTransaction unsignedTransaction = new SellCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeSaleOrderInfo,
                     ent.fee,
-                    timestamp);
+                    SellCarTransaction.CAR_SELL_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -256,17 +251,17 @@ public class CarApi extends ApplicationApiGroup {
 
             // Create the resulting signed transaction.
             SellCarTransaction transaction = new SellCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     regularInputProofs,
                     regularOutputs,
                     saleOrderInfo,
                     ent.fee,
-                    timestamp);
+                    SellCarTransaction.CAR_SELL_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         }
         catch (Exception e) {
-            return new CarResponseError("0102", "Error during Car Sell Order sell operation.", Some.apply(e));
+            return new CarResponseError("0102", "Error during Car Sell Order sell operation.", Optional.of(e));
         }
     }
 
@@ -288,7 +283,7 @@ public class CarApi extends ApplicationApiGroup {
             Optional<Secret> buyerSecretOption = view.getNodeWallet().secretByPublicKey(
                     new PublicKey25519Proposition(carSellOrderBox.proposition().getBuyerPublicKeyBytes()));
             if(!buyerSecretOption.isPresent()) {
-                return new CarResponseError("0100", "Can't buy the car, because the buyer proposition is not owned by the Node.", Option.empty());
+                return new CarResponseError("0100", "Can't buy the car, because the buyer proposition is not owned by the Node.", Optional.empty());
             }
 
             // Get Regular boxes to pay the car price + fee
@@ -297,11 +292,11 @@ public class CarApi extends ApplicationApiGroup {
 
             // Avoid to add boxes that are already spent in some Transaction that is present in node Mempool.
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
-            List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
+            List<Box<Proposition>> ZenBoxes = view.getNodeWallet().boxesOfType(ZenBox.class, boxIdsToExclude);
             int index = 0;
-            while (amountToPay > 0 && index < regularBoxes.size()) {
-                paymentBoxes.add(regularBoxes.get(index));
-                amountToPay -= regularBoxes.get(index).value();
+            while (amountToPay > 0 && index < ZenBoxes.size()) {
+                paymentBoxes.add(ZenBoxes.get(index));
+                amountToPay -= ZenBoxes.get(index).value();
                 index++;
             }
 
@@ -311,14 +306,14 @@ public class CarApi extends ApplicationApiGroup {
 
             // Set change if exists
             long change = Math.abs(amountToPay);
-            List<RegularBoxData> regularOutputs = new ArrayList<>();
+            List<ZenBoxData> regularOutputs = new ArrayList<>();
             if (change > 0) {
-                regularOutputs.add(new RegularBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
+                regularOutputs.add(new ZenBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
             }
 
-            List<byte[]> inputRegularBoxIds = new ArrayList<>();
+            List<byte[]> inputZenBoxIds = new ArrayList<>();
             for (Box b : paymentBoxes) {
-                inputRegularBoxIds.add(b.id());
+                inputZenBoxIds.add(b.id());
             }
 
             // Create fake proofs to be able to create transaction to be signed.
@@ -327,16 +322,15 @@ public class CarApi extends ApplicationApiGroup {
             SellOrderSpendingProof fakeSellProof = new SellOrderSpendingProof(new byte[SellOrderSpendingProof.SIGNATURE_LENGTH], isSeller);
             CarBuyOrderInfo fakeBuyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, fakeSellProof);
 
-            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputRegularBoxIds.size(), null);
-            Long timestamp = System.currentTimeMillis();
+            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputZenBoxIds.size(), null);
 
             BuyCarTransaction unsignedTransaction = new BuyCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeBuyOrderInfo,
                     ent.fee,
-                    timestamp);
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -357,16 +351,16 @@ public class CarApi extends ApplicationApiGroup {
             CarBuyOrderInfo buyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, buyerProof);
 
             BuyCarTransaction transaction = new BuyCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     regularInputProofs,
                     regularOutputs,
                     buyOrderInfo,
                     ent.fee,
-                    timestamp);
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         } catch (Exception e) {
-            return new CarResponseError("0103", "Error during Car Sell Order buy operation.", Some.apply(e));
+            return new CarResponseError("0103", "Error during Car Sell Order buy operation.", Optional.of(e));
         }
     }
 
@@ -392,7 +386,7 @@ public class CarApi extends ApplicationApiGroup {
             Optional<Secret> ownerSecretOption = view.getNodeWallet().secretByPublicKey(
                     new PublicKey25519Proposition(carSellOrderBox.proposition().getOwnerPublicKeyBytes()));
             if(!ownerSecretOption.isPresent()) {
-                return new CarResponseError("0100", "Can't buy the car, because the owner proposition is not owned by the Node.", Option.empty());
+                return new CarResponseError("0100", "Can't buy the car, because the owner proposition is not owned by the Node.", Optional.empty());
             }
 
             // Get Regular boxes to pay the fee
@@ -400,11 +394,11 @@ public class CarApi extends ApplicationApiGroup {
             long amountToPay = ent.fee;
 
             List<byte[]> boxIdsToExclude = boxesFromMempool(view.getNodeMemoryPool());
-            List<Box<Proposition>> regularBoxes = view.getNodeWallet().boxesOfType(RegularBox.class, boxIdsToExclude);
+            List<Box<Proposition>> ZenBoxes = view.getNodeWallet().boxesOfType(ZenBox.class, boxIdsToExclude);
             int index = 0;
-            while (amountToPay > 0 && index < regularBoxes.size()) {
-                paymentBoxes.add(regularBoxes.get(index));
-                amountToPay -= regularBoxes.get(index).value();
+            while (amountToPay > 0 && index < ZenBoxes.size()) {
+                paymentBoxes.add(ZenBoxes.get(index));
+                amountToPay -= ZenBoxes.get(index).value();
                 index++;
             }
 
@@ -414,14 +408,14 @@ public class CarApi extends ApplicationApiGroup {
 
             // Set change if exists
             long change = Math.abs(amountToPay);
-            List<RegularBoxData> regularOutputs = new ArrayList<>();
+            List<ZenBoxData> regularOutputs = new ArrayList<>();
             if (change > 0) {
-                regularOutputs.add(new RegularBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
+                regularOutputs.add(new ZenBoxData((PublicKey25519Proposition) paymentBoxes.get(0).proposition(), change));
             }
 
-            List<byte[]> inputRegularBoxIds = new ArrayList<>();
+            List<byte[]> inputZenBoxIds = new ArrayList<>();
             for (Box b : paymentBoxes) {
-                inputRegularBoxIds.add(b.id());
+                inputZenBoxIds.add(b.id());
             }
 
             // Create fake proofs to be able to create transaction to be signed.
@@ -430,16 +424,15 @@ public class CarApi extends ApplicationApiGroup {
             SellOrderSpendingProof fakeOwnerProof = new SellOrderSpendingProof(new byte[SellOrderSpendingProof.SIGNATURE_LENGTH], isSeller);
             CarBuyOrderInfo fakeBuyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, fakeOwnerProof);
 
-            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputRegularBoxIds.size(), null);
-            Long timestamp = System.currentTimeMillis();
+            List<Signature25519> fakeRegularInputProofs = Collections.nCopies(inputZenBoxIds.size(), null);
 
             BuyCarTransaction unsignedTransaction = new BuyCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     fakeRegularInputProofs,
                     regularOutputs,
                     fakeBuyOrderInfo,
                     ent.fee,
-                    timestamp);
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             // Get the Tx message to be signed.
             byte[] messageToSign = unsignedTransaction.messageToSign();
@@ -460,16 +453,16 @@ public class CarApi extends ApplicationApiGroup {
             CarBuyOrderInfo buyOrderInfo = new CarBuyOrderInfo(carSellOrderBox, ownerProof);
 
             BuyCarTransaction transaction = new BuyCarTransaction(
-                    inputRegularBoxIds,
+                    inputZenBoxIds,
                     regularInputProofs,
                     regularOutputs,
                     buyOrderInfo,
                     ent.fee,
-                    timestamp);
+                    BuyCarTransaction.BUY_CAR_TRANSACTION_VERSION);
 
             return new TxResponse(ByteUtils.toHexString(sidechainTransactionsCompanion.toBytes((BoxTransaction) transaction)));
         } catch (Exception e) {
-            return new CarResponseError("0103", "Error during Car Sell Order cancel operation.", Some.apply(e));
+            return new CarResponseError("0103", "Error during Car Sell Order cancel operation.", Optional.of(e));
         }
     }
 
@@ -487,9 +480,9 @@ public class CarApi extends ApplicationApiGroup {
     static class CarResponseError implements ErrorResponse {
         private final String code;
         private final String description;
-        private final Option<Throwable> exception;
+        private final Optional<Throwable> exception;
 
-        CarResponseError(String code, String description, Option<Throwable> exception) {
+        CarResponseError(String code, String description, Optional<Throwable> exception) {
             this.code = code;
             this.description = description;
             this.exception = exception;
@@ -506,7 +499,7 @@ public class CarApi extends ApplicationApiGroup {
         }
 
         @Override
-        public Option<Throwable> exception() {
+        public Optional<Throwable> exception() {
             return exception;
         }
     }
