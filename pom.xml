@@ -26,6 +26,14 @@
 		</dependency>
 	</dependencies>
 
+	<repositories>
+		<repository>
+			<id>softmotions_repository</id>
+			<name>Softmotions Public Repository</name>
+			<url>https://repo.softmotions.com/repository/softmotions-public</url>
+		</repository>
+	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>
