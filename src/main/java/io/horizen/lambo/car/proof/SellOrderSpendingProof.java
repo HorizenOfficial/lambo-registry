@@ -18,6 +18,7 @@ import java.util.Objects;
 public final class SellOrderSpendingProof extends AbstractSignature25519<PrivateKey25519, SellOrderProposition> {
     // To distinguish who opened the CarSellOrderBox: seller or buyer
     private final boolean isSeller;
+    private final byte[] signatureBytes;
 
     public static final int SIGNATURE_LENGTH = Ed25519.signatureLength();
 
@@ -27,10 +28,15 @@ public final class SellOrderSpendingProof extends AbstractSignature25519<Private
             throw new IllegalArgumentException(String.format("Incorrect signature length, %d expected, %d found", SIGNATURE_LENGTH,
                     signatureBytes.length));
         this.isSeller = isSeller;
+        this.signatureBytes = signatureBytes;
     }
 
     public boolean isSeller() {
         return isSeller;
+    }
+
+    public byte[] signatureBytes() {
+        return Arrays.copyOf(signatureBytes, SIGNATURE_LENGTH);
     }
 
     // Depends on isSeller flag value check the signature against seller or buyer public key specified in SellOrderProposition.

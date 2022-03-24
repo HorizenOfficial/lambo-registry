@@ -7,11 +7,9 @@ import com.horizen.box.data.AbstractBoxData;
 import com.horizen.box.data.BoxDataSerializer;
 import io.horizen.lambo.car.box.CarBox;
 import com.horizen.proposition.PublicKey25519Proposition;
-import com.horizen.proposition.PublicKey25519PropositionSerializer;
 import com.horizen.serialization.Views;
 import scorex.crypto.hash.Blake2b256;
 
-import java.util.Arrays;
 
 @JsonView(Views.Default.class)
 public final class CarBoxData extends AbstractBoxData<PublicKey25519Proposition, CarBox, CarBoxData> {
@@ -67,50 +65,6 @@ public final class CarBoxData extends AbstractBoxData<PublicKey25519Proposition,
     @Override
     public BoxDataSerializer serializer() {
         return CarBoxDataSerializer.getSerializer();
-    }
-
-    @Override
-    public byte[] bytes() {
-        return Bytes.concat(
-                proposition().bytes(),
-                Ints.toByteArray(vin.getBytes().length),
-                vin.getBytes(),
-                Ints.toByteArray(year),
-                Ints.toByteArray(model.getBytes().length),
-                model.getBytes(),
-                Ints.toByteArray(color.getBytes().length),
-                color.getBytes()
-        );
-    }
-
-    public static CarBoxData parseBytes(byte[] bytes) {
-        int offset = 0;
-
-        PublicKey25519Proposition proposition = PublicKey25519PropositionSerializer.getSerializer()
-                .parseBytes(Arrays.copyOf(bytes, PublicKey25519Proposition.getLength()));
-        offset += PublicKey25519Proposition.getLength();
-
-        int size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String vin = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-        offset += size;
-
-        int year = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String model = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-        offset += size;
-
-        size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String color = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-
-        return new CarBoxData(proposition, vin, year, model, color);
     }
 
     @Override

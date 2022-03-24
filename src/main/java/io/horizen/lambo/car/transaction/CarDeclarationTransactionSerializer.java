@@ -18,11 +18,11 @@ public final class CarDeclarationTransactionSerializer implements TransactionSer
 
     @Override
     public void serialize(CarDeclarationTransaction transaction, Writer writer) {
-        writer.putBytes(transaction.bytes());
+        transaction.serialize(writer);
     }
 
     @Override
     public CarDeclarationTransaction parse(Reader reader) {
-        return CarDeclarationTransaction.parseBytes(reader.getBytes(reader.remaining()));
+        return CarDeclarationTransaction.parse(reader);
     }
 }

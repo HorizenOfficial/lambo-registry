@@ -1,6 +1,8 @@
 package io.horizen.lambo.car.box;
 
 import com.horizen.box.BoxSerializer;
+import io.horizen.lambo.car.box.data.CarSellOrderBoxData;
+import io.horizen.lambo.car.box.data.CarSellOrderBoxDataSerializer;
 import scorex.util.serialization.Reader;
 import scorex.util.serialization.Writer;
 
@@ -17,12 +19,16 @@ public final class CarSellOrderBoxSerializer implements BoxSerializer<CarSellOrd
     }
 
     @Override
-    public void serialize(CarSellOrderBox carSellOrder, Writer writer) {
-        writer.putBytes(carSellOrder.bytes());
+    public void serialize(CarSellOrderBox box, Writer writer) {
+        writer.putLong(box.nonce());
+        CarSellOrderBoxDataSerializer.getSerializer().serialize(box.getBoxData(), writer);
     }
 
     @Override
     public CarSellOrderBox parse(Reader reader) {
-        return CarSellOrderBox.parseBytes(reader.getBytes(reader.remaining()));
+        long nonce = reader.getLong();
+        CarSellOrderBoxData boxData = CarSellOrderBoxDataSerializer.getSerializer().parse(reader);
+
+        return new CarSellOrderBox(boxData, nonce);
     }
 }

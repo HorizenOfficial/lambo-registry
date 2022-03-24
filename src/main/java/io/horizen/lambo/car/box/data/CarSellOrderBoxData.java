@@ -71,58 +71,6 @@ public final class CarSellOrderBoxData extends AbstractBoxData<SellOrderProposit
     }
 
     @Override
-    public byte[] bytes() {
-        return Bytes.concat(
-                Ints.toByteArray(proposition().bytes().length),
-                proposition().bytes(),
-                Longs.toByteArray(value()),
-                Ints.toByteArray(vin.getBytes().length),
-                vin.getBytes(),
-                Ints.toByteArray(year),
-                Ints.toByteArray(model.getBytes().length),
-                model.getBytes(),
-                Ints.toByteArray(color.getBytes().length),
-                color.getBytes()
-        );
-    }
-
-    public static CarSellOrderBoxData parseBytes(byte[] bytes) {
-        int offset = 0;
-
-        int size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        SellOrderProposition proposition = SellOrderPropositionSerializer.getSerializer()
-                .parseBytes(Arrays.copyOfRange(bytes, offset, offset + size));
-        offset += size;
-
-        long price = Longs.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Longs.BYTES));
-        offset += Longs.BYTES;
-
-        size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String vin = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-        offset += size;
-
-        int year = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String model = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-        offset += size;
-
-        size = Ints.fromByteArray(Arrays.copyOfRange(bytes, offset, offset + Ints.BYTES));
-        offset += Ints.BYTES;
-
-        String color = new String(Arrays.copyOfRange(bytes, offset, offset + size));
-
-        return new CarSellOrderBoxData(proposition, price, vin, year, model, color);
-    }
-
-    @Override
     public String toString() {
         return "CarSellOrderBoxData{" +
                 "vin=" + vin +

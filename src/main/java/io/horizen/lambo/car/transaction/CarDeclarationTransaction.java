@@ -1,8 +1,5 @@
 package io.horizen.lambo.car.transaction;
 
-import com.google.common.primitives.Bytes;
-import com.google.common.primitives.Ints;
-import com.google.common.primitives.Longs;
 import com.horizen.box.Box;
 import com.horizen.box.data.BoxData;
 import com.horizen.box.data.ZenBoxData;
@@ -12,10 +9,10 @@ import io.horizen.lambo.car.box.data.CarBoxDataSerializer;
 import com.horizen.proof.Signature25519;
 import com.horizen.proposition.Proposition;
 import com.horizen.transaction.TransactionSerializer;
-import com.horizen.utils.BytesUtils;
 import scorex.core.NodeViewModifier$;
+import scorex.util.serialization.Reader;
+import scorex.util.serialization.Writer;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,73 +70,35 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     }
 
     // Define object serialization, that should serialize both parent class entries and CarBoxData as well
-    @Override
-    public byte[] bytes() {
-        ByteArrayOutputStream inputsIdsStream = new ByteArrayOutputStream();
+    void serialize(Writer writer) {
+        writer.put(version());
+        writer.putLong(fee());
+
+        writer.putInt(inputZenBoxIds.size());
         for(byte[] id: inputZenBoxIds)
-            inputsIdsStream.write(id, 0, id.length);
+            writer.putBytes(id);
 
-        byte[] inputZenBoxIdsBytes = inputsIdsStream.toByteArray();
-
-        byte[] inputZenBoxProofsBytes = zenBoxProofsSerializer.toBytes(inputZenBoxProofs);
-
-        byte[] outputZenBoxesDataBytes = zenBoxDataListSerializer.toBytes(outputZenBoxesData);
-
-        byte[] outputCarBoxDataBytes = outputCarBoxData.bytes();
-
-        return Bytes.concat(
-                new byte[] {version()},
-                Longs.toByteArray(fee()),                               // 8 bytes
-                Ints.toByteArray(inputZenBoxIdsBytes.length),           // 4 bytes
-                inputZenBoxIdsBytes,                                    // depends on previous value (>=4 bytes)
-                Ints.toByteArray(inputZenBoxProofsBytes.length),        // 4 bytes
-                inputZenBoxProofsBytes,                                 // depends on previous value (>=4 bytes)
-                Ints.toByteArray(outputZenBoxesDataBytes.length),       // 4 bytes
-                outputZenBoxesDataBytes,                                // depends on previous value (>=4 bytes)
-                Ints.toByteArray(outputCarBoxDataBytes.length),         // 4 bytes
-                outputCarBoxDataBytes                                   // depends on previous value (>=4 bytes)
-        );
+        zenBoxProofsSerializer.serialize(inputZenBoxProofs, writer);
+        zenBoxDataListSerializer.serialize(outputZenBoxesData, writer);
+        CarBoxDataSerializer.getSerializer().serialize(outputCarBoxData, writer);
     }
 
-    // Define object deserialization similar to 'toBytes()' representation.
-    public static CarDeclarationTransaction parseBytes(byte[] bytes) {
-        int offset = 0;
+    static CarDeclarationTransaction parse(Reader reader) {
+        byte version = reader.getByte();
+        long fee = reader.getLong();
 
-        byte version = bytes[offset];
-        offset += 1;
-
-        long fee = BytesUtils.getLong(bytes, offset);
-        offset += 8;
-
-        int batchSize = BytesUtils.getInt(bytes, offset);
-        offset += 4;
-
-        ArrayList<byte[]> inputZenBoxIds = new ArrayList<>();
+        int inputBytesIdsLength = reader.getInt();
         int idLength = NodeViewModifier$.MODULE$.ModifierIdSize();
-        while(batchSize > 0) {
-            inputZenBoxIds.add(Arrays.copyOfRange(bytes, offset, offset + idLength));
-            offset += idLength;
-            batchSize -= idLength;
-        }
+        List<byte[]> inputZenBoxIds = new ArrayList<>();
+        while(inputBytesIdsLength-- > 0)
+            inputZenBoxIds.add(reader.getBytes(idLength));
 
-        batchSize = BytesUtils.getInt(bytes, offset);
-        offset += 4;
+        List<Signature25519> inputZenBoxProofs = zenBoxProofsSerializer.parse(reader);
+        List<ZenBoxData> outputZenBoxesData = zenBoxDataListSerializer.parse(reader);
+        CarBoxData outputCarBoxData = CarBoxDataSerializer.getSerializer().parse(reader);
 
-        List<Signature25519> inputZenBoxProofs = zenBoxProofsSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
-        offset += batchSize;
-
-        batchSize = BytesUtils.getInt(bytes, offset);
-        offset += 4;
-
-        List<ZenBoxData> outputZenBoxesData = zenBoxDataListSerializer.parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
-        offset += batchSize;
-
-        batchSize = BytesUtils.getInt(bytes, offset);
-        offset += 4;
-
-        CarBoxData outputCarBoxData = CarBoxDataSerializer.getSerializer().parseBytes(Arrays.copyOfRange(bytes, offset, offset + batchSize));
-
-        return new CarDeclarationTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData, outputCarBoxData, fee, version);
+        return new CarDeclarationTransaction(inputZenBoxIds, inputZenBoxProofs, outputZenBoxesData,
+                outputCarBoxData, fee, version);
     }
 
     // Set specific Serializer for CarDeclarationTransaction class.
@@ -147,5 +106,4 @@ public final class CarDeclarationTransaction extends AbstractRegularTransaction 
     public TransactionSerializer serializer() {
         return CarDeclarationTransactionSerializer.getSerializer();
     }
-
 }

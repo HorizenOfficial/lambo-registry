@@ -18,11 +18,11 @@ public final class BuyCarTransactionSerializer implements TransactionSerializer<
 
     @Override
     public void serialize(BuyCarTransaction transaction, Writer writer) {
-        writer.putBytes(transaction.bytes());
+        transaction.serialize(writer);
     }
 
     @Override
     public BuyCarTransaction parse(Reader reader) {
-        return BuyCarTransaction.parseBytes(reader.getBytes(reader.remaining()));
+        return BuyCarTransaction.parse(reader);
     }
 }
